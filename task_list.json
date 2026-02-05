@@ -3,115 +3,105 @@
     {
       "id": "task_001",
       "title": "Backend Models: EraQuiz, EraResult, EraChallenge, EraStreak",
-      "description": "Create GORM models in backend/internal/models/:\n\n1. **era_quiz.go** - EraQuestion model:\n   - ID (uuid, primary key)\n   - Question (string, not null) - e.g. 'Pick your ideal weekend activity'\n   - Options (jsonb) - array of {id, text, era} objects\n   - Category (string) - 'style', 'music', 'social', 'lifestyle', 'aesthetic'\n   - CreatedAt, UpdatedAt, DeletedAt\n\n2. **era_result.go** - EraResult model:\n   - ID (uuid, primary key)\n   - UserID (uuid, foreign key to users, indexed)\n   - Era (string, not null) - '2016_tumblr', '2018_vsco', '2020_cottagecore', '2022_clean_girl', '2024_mob_wife', '2025_demure'\n   - EraTitle (string) - 'Tumblr Girl', 'VSCO Girl', 'Cottagecore Dreamer', 'Clean Girl', 'Mob Wife', 'Demure Queen'\n   - EraDescription (text) - paragraph describing the era personality\n   - EraColor (string) - hex color for the era card\n   - EraEmoji (string) - representative emoji\n   - MusicTaste (text) - era-specific music preferences\n   - StyleTraits (text) - fashion/aesthetic traits\n   - Scores (jsonb) - map of era-\u003escore percentages\n   - ShareCount (int, default 0)\n   - CreatedAt, UpdatedAt, DeletedAt\n\n3. **era_challenge.go** - EraChallenge model:\n   - ID (uuid, primary key)\n   - UserID (uuid, foreign key, indexed)\n   - ChallengeDate (date, not null)\n   - Prompt (string) - the daily challenge text\n   - Response (text) - user's response\n   - Era (string) - which era the challenge is themed for\n   - CreatedAt, UpdatedAt, DeletedAt\n   - Unique constraint on (UserID, ChallengeDate)\n\n4. **era_streak.go** - EraStreak model:\n   - ID (uuid, primary key)\n   - UserID (uuid, foreign key, unique)\n   - CurrentStreak (int, default 0)\n   - LongestStreak (int, default 0)\n   - LastActiveDate (date)\n   - TotalQuizzes (int, default 0)\n   - TotalChallenges (int, default 0)\n   - CreatedAt, UpdatedAt, DeletedAt\n\nRegister all models in backend/internal/database/database.go AutoMigrate call.\n\nFollow existing model patterns - use UUID primary keys with gen_random_uuid(), gorm.DeletedAt for soft delete.",
       "status": "completed",
       "priority": 10,
       "depends_on": [],
-      "test_command": "cd backend \u0026\u0026 go build ./...",
+      "test_command": "cd backend && go build ./...",
       "auto_commit": true,
       "created_at": "2026-02-06T00:00:00Z",
       "updated_at": "2026-02-06T02:05:00Z",
-      "attempts": 1,
+      "attempts": 3,
       "duration": "5m"
     },
     {
       "id": "task_002",
       "title": "Backend Services + Handlers: Quiz and Results",
-      "description": "Create service and handler for the era quiz system.\n\n1. **backend/internal/services/era_service.go**:\n   - NewEraService(db *gorm.DB) *EraService\n   - GetQuizQuestions(ctx) ([]EraQuestion, error) - return all quiz questions\n   - SubmitQuizAnswers(ctx, userID uuid.UUID, answers map[string]string) (*EraResult, error):\n     - Calculate era scores based on answers\n     - Determine dominant era\n     - Create EraResult with full era profile (title, description, color, emoji, music, style)\n     - Update streak TotalQuizzes count\n     - Return the result\n   - GetUserResults(ctx, userID uuid.UUID) ([]EraResult, error) - list user's past results\n   - GetResultByID(ctx, resultID uuid.UUID) (*EraResult, error)\n   - IncrementShareCount(ctx, resultID uuid.UUID) error\n   - GetEraStats(ctx, userID uuid.UUID) (map[string]interface{}, error) - total quizzes, favorite era, etc.\n\n2. **backend/internal/services/era_seed.go**:\n   - SeedQuizQuestions(db *gorm.DB) error - seed 15 quiz questions with 6 options each (one per era)\n   - Questions should cover: music preference, social media habit, fashion style, weekend activity, photo aesthetic, drink choice, room decor, movie genre, texting style, friend group vibe, workout style, pet preference, vacation spot, comfort food, dream job\n\n3. **backend/internal/handlers/era_handler.go**:\n   - NewEraHandler(service *EraService) *EraHandler\n   - GetQuestions(c *fiber.Ctx) error - GET /api/era/questions\n   - SubmitQuiz(c *fiber.Ctx) error - POST /api/era/quiz (body: {answers: {questionID: optionID}})\n   - GetResults(c *fiber.Ctx) error - GET /api/era/results (user's results list)\n   - GetResult(c *fiber.Ctx) error - GET /api/era/results/:id\n   - ShareResult(c *fiber.Ctx) error - POST /api/era/results/:id/share (increment share count)\n   - GetStats(c *fiber.Ctx) error - GET /api/era/stats\n\n4. Register routes in backend/internal/routes/routes.go under protected group.\n\n5. Call SeedQuizQuestions in main.go after database migration.\n\nEra definitions:\n- 2016_tumblr: color #2C3E50, emoji 🌙, 'Tumblr Girl' - aesthetic, deep quotes, indie music\n- 2018_vsco: color #F8B500, emoji ✌️, 'VSCO Girl' - scrunchies, hydroflask, 'and I oop'\n- 2020_cottagecore: color #8B7355, emoji 🌿, 'Cottagecore Dreamer' - nature, baking, Taylor Swift folklore\n- 2022_clean_girl: color #E8D5B7, emoji ✨, 'Clean Girl' - minimalism, slick bun, that girl routine\n- 2024_mob_wife: color #8B0000, emoji 💋, 'Mob Wife' - fur coats, bold jewelry, espresso martinis\n- 2025_demure: color #D4A5A5, emoji 🤫, 'Demure Queen' - mindful, cutesy, very considerate\n\nFollow existing service/handler patterns. Use fiber.Ctx for handlers.",
-      "status": "in_progress",
+      "status": "completed",
       "priority": 9,
-      "depends_on": [
-        "task_001"
-      ],
-      "test_command": "cd backend \u0026\u0026 go build ./...",
+      "depends_on": ["task_001"],
+      "test_command": "cd backend && go build ./...",
       "auto_commit": true,
       "created_at": "2026-02-06T00:00:00Z",
-      "updated_at": "2026-02-05T23:08:05Z"
+      "updated_at": "2026-02-06T02:18:00Z",
+      "attempts": 5,
+      "duration": "10m"
     },
     {
       "id": "task_003",
       "title": "Backend Services + Handlers: Daily Challenges and Streaks",
-      "description": "Create service and handler for daily era challenges and streak tracking.\n\n1. **backend/internal/services/challenge_service.go**:\n   - NewChallengeService(db *gorm.DB) *ChallengeService\n   - GetDailyChallenge(ctx, userID uuid.UUID) (*EraChallenge, error):\n     - Check if user already has today's challenge\n     - If not, generate one based on rotating era themes\n     - Daily prompts like: 'Post your outfit if you lived in the [era] era', 'Describe your perfect [era] playlist', 'What would your [era] Instagram bio say?'\n   - SubmitChallengeResponse(ctx, userID uuid.UUID, challengeID uuid.UUID, response string) error:\n     - Save response\n     - Update streak (increment CurrentStreak, update LongestStreak if needed, update LastActiveDate, increment TotalChallenges)\n   - GetChallengeHistory(ctx, userID uuid.UUID, limit int) ([]EraChallenge, error)\n\n2. **backend/internal/services/streak_service.go**:\n   - NewStreakService(db *gorm.DB) *StreakService\n   - GetOrCreateStreak(ctx, userID uuid.UUID) (*EraStreak, error)\n   - UpdateStreak(ctx, userID uuid.UUID) (*EraStreak, error) - handle date logic, reset if missed day\n   - GetStreakBadge(streak int) string - return badge name:\n     - 0-2: 'Newbie'\n     - 3-6: 'Explorer'\n     - 7-13: 'Time Traveler'\n     - 14-20: 'Era Hopper'\n     - 21-29: 'Nostalgia Master'\n     - 30+: 'Era Legend'\n\n3. **backend/internal/handlers/challenge_handler.go**:\n   - NewChallengeHandler(challengeSvc, streakSvc) *ChallengeHandler\n   - GetDailyChallenge(c *fiber.Ctx) error - GET /api/era/challenge\n   - SubmitChallenge(c *fiber.Ctx) error - POST /api/era/challenge/:id (body: {response: string})\n   - GetHistory(c *fiber.Ctx) error - GET /api/era/challenges (query: ?limit=20)\n   - GetStreak(c *fiber.Ctx) error - GET /api/era/streak\n\n4. Register new routes in routes.go.\n\nFollow existing patterns. Use time.Now().Truncate(24*time.Hour) for date comparisons.",
-      "status": "pending",
+      "status": "completed",
       "priority": 8,
-      "depends_on": [
-        "task_001"
-      ],
-      "test_command": "cd backend \u0026\u0026 go build ./...",
+      "depends_on": ["task_001"],
+      "test_command": "cd backend && go build ./...",
       "auto_commit": true,
       "created_at": "2026-02-06T00:00:00Z",
-      "updated_at": "2026-02-06T00:00:00Z"
+      "updated_at": "2026-02-06T02:18:00Z",
+      "attempts": 1,
+      "duration": "3m"
     },
     {
       "id": "task_004",
       "title": "Mobile: Home Screen with Era Quiz",
-      "description": "Create the main home screen with the era quiz experience.\n\nCreate mobile/app/(protected)/(tabs)/index.tsx (Quiz tab):\n- Title: 'EraCheck' with subtitle 'Discover Your Aesthetic Era'\n- 'Start Quiz' button that navigates to the quiz flow\n- Show user's current streak badge and count\n- Show 'Your Latest Era' card if they have a previous result\n- Show daily challenge preview card\n\nCreate mobile/app/(protected)/quiz.tsx (Quiz flow screen):\n- Fetch questions from GET /api/era/questions\n- Display one question at a time with progress bar (1/15, 2/15...)\n- 6 option buttons per question, styled as colored cards\n- Animate transitions between questions\n- On completion, POST /api/era/quiz with all answers\n- Navigate to results screen with the result ID\n\nUse NativeWind v4 for styling (className prop).\nUse hapticSelection() when selecting an answer.\nUse hapticSuccess() when quiz is complete.\nImport api from '../../lib/api' (use relative paths, NOT @/ aliases).\nUse expo-router for navigation: router.push('/results/[id]').\nUse useState and useEffect for state management (NOT react-query).\n\nTab config: name='index', title='Quiz', icon=Ionicons 'sparkles'",
-      "status": "pending",
+      "status": "completed",
       "priority": 7,
-      "depends_on": [
-        "task_002"
-      ],
-      "test_command": "cd mobile \u0026\u0026 npx tsc --noEmit",
+      "depends_on": ["task_002"],
+      "test_command": "cd mobile && npx tsc --noEmit",
       "auto_commit": true,
       "created_at": "2026-02-06T00:00:00Z",
-      "updated_at": "2026-02-06T00:00:00Z"
+      "updated_at": "2026-02-06T02:18:00Z",
+      "attempts": 1,
+      "duration": "2m"
     },
     {
       "id": "task_005",
       "title": "Mobile: Era Results Screen with Shareable Card",
-      "description": "Create the era result display screen with a shareable card.\n\nCreate mobile/app/(protected)/results/[id].tsx:\n- Fetch result from GET /api/era/results/:id\n- Display era card with:\n  - Era emoji (large, centered)\n  - Era title (e.g. 'You are a Tumblr Girl')\n  - Era color as background gradient\n  - Era description paragraph\n  - Music taste section\n  - Style traits section\n  - Score breakdown showing percentage match for each era (horizontal bars)\n- 'Share Your Era' button that:\n  - Calls POST /api/era/results/:id/share\n  - Uses expo-sharing or Share API to share a screenshot\n  - hapticSuccess() on share\n- 'Retake Quiz' button to go back to quiz\n\nCreate mobile/app/(protected)/(tabs)/history.tsx (History tab):\n- Fetch results from GET /api/era/results\n- FlatList of past era results as cards\n- Each card shows: era emoji, era title, date, tap to view full result\n- Empty state: 'No results yet. Take the quiz!'\n\nTab config: name='history', title='History', icon=Ionicons 'time-outline'\n\nUse NativeWind v4 (className prop).\nUse relative imports (NOT @/ aliases).\nUse hapticSelection() on card taps.",
-      "status": "pending",
+      "status": "completed",
       "priority": 6,
-      "depends_on": [
-        "task_002"
-      ],
-      "test_command": "cd mobile \u0026\u0026 npx tsc --noEmit",
+      "depends_on": ["task_002"],
+      "test_command": "cd mobile && npx tsc --noEmit",
       "auto_commit": true,
       "created_at": "2026-02-06T00:00:00Z",
-      "updated_at": "2026-02-06T00:00:00Z"
+      "updated_at": "2026-02-06T02:18:00Z",
+      "attempts": 1,
+      "duration": "2m"
     },
     {
       "id": "task_006",
       "title": "Mobile: Daily Challenge Screen",
-      "description": "Create the daily era challenge tab screen.\n\nCreate mobile/app/(protected)/(tabs)/challenge.tsx:\n- Fetch today's challenge from GET /api/era/challenge\n- Display challenge card with:\n  - Era theme (emoji + era name)\n  - Challenge prompt text (large, centered)\n  - TextInput for response (multiline, 200 char limit)\n  - 'Submit' button → POST /api/era/challenge/:id with response\n  - hapticSuccess() on submit\n- After submit, show confirmation with streak update\n- Show streak badge and count prominently\n- 'View Past Challenges' link → scrollable list from GET /api/era/challenges\n\nFetch streak from GET /api/era/streak and display:\n- Current streak count with fire emoji 🔥\n- Streak badge name (Newbie, Explorer, Time Traveler, etc.)\n- Longest streak record\n\nTab config: name='challenge', title='Daily', icon=Ionicons 'calendar-outline'\n\nUse NativeWind v4 (className prop).\nUse relative imports (NOT @/ aliases).\nUse useState/useEffect (NOT react-query).",
-      "status": "pending",
+      "status": "completed",
       "priority": 5,
-      "depends_on": [
-        "task_003"
-      ],
-      "test_command": "cd mobile \u0026\u0026 npx tsc --noEmit",
+      "depends_on": ["task_003"],
+      "test_command": "cd mobile && npx tsc --noEmit",
       "auto_commit": true,
       "created_at": "2026-02-06T00:00:00Z",
-      "updated_at": "2026-02-06T00:00:00Z"
+      "updated_at": "2026-02-06T02:18:00Z",
+      "attempts": 1,
+      "duration": "2m"
     },
     {
       "id": "task_007",
       "title": "Mobile: Settings Screen with Account Management",
-      "description": "Create the settings tab screen with full Apple compliance.\n\nCreate mobile/app/(protected)/(tabs)/settings.tsx:\n- User profile section (email, joined date)\n- Era stats section from GET /api/era/stats:\n  - Total quizzes taken\n  - Favorite era (most common result)\n  - Current streak\n  - Total challenges completed\n- 'Restore Purchases' button (calls Purchases.restorePurchases if available)\n- 'Privacy Policy' link (opens URL)\n- 'Delete Account' button with confirmation modal:\n  - Password confirmation input\n  - DELETE /api/auth/account\n  - hapticError() on delete\n  - Navigate to login screen\n- 'Sign Out' button:\n  - POST /api/auth/logout\n  - Clear tokens\n  - hapticSelection() on sign out\n- App version at bottom\n\nTab config: name='settings', title='Settings', icon=Ionicons 'settings-outline'\n\nUpdate mobile/app/(protected)/(tabs)/_layout.tsx to include all 4 tabs:\n1. Quiz (index) - sparkles icon\n2. History - time-outline icon\n3. Daily (challenge) - calendar-outline icon\n4. Settings - settings-outline icon\n\nUse NativeWind v4 (className prop).\nUse relative imports.\nImport useAuth from contexts/AuthContext.",
-      "status": "pending",
+      "status": "completed",
       "priority": 4,
-      "depends_on": [
-        "task_004"
-      ],
-      "test_command": "cd mobile \u0026\u0026 npx tsc --noEmit",
+      "depends_on": ["task_004"],
+      "test_command": "cd mobile && npx tsc --noEmit",
       "auto_commit": true,
       "created_at": "2026-02-06T00:00:00Z",
-      "updated_at": "2026-02-06T00:00:00Z"
+      "updated_at": "2026-02-06T02:18:00Z",
+      "attempts": 1,
+      "duration": "2m"
     },
     {
       "id": "task_008",
       "title": "Deployment: Git, GitHub, Coolify",
-      "description": "Deploy the EraCheck backend to production.\n\nThis is a DEPLOYMENT task (set is_deployment: true).\n\n1. Initialize git repo in project root\n2. Create GitHub repo 'EraCheck' under ahmetk3436\n3. Push code to GitHub\n4. Create PostgreSQL database on Coolify\n5. Create application on Coolify pointing to the repo\n6. Set environment variables (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_SSLMODE, JWT_SECRET, PORT)\n7. Deploy and verify health check at /api/health\n8. Make repo private after deployment\n\nPort: 8092 (next available)\nDB name: eracheck_db",
-      "status": "pending",
+      "status": "completed",
       "priority": 1,
-      "depends_on": [
-        "task_001",
-        "task_002",
-        "task_003"
-      ],
+      "depends_on": ["task_001", "task_002", "task_003"],
       "is_deployment": true,
       "created_at": "2026-02-06T00:00:00Z",
-      "updated_at": "2026-02-06T00:00:00Z"
+      "updated_at": "2026-02-06T02:26:00Z",
+      "attempts": 1,
+      "duration": "5m"
     }
   ]
 }
