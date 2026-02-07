@@ -85,20 +85,20 @@ export default function HistoryScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563eb" />
+          <ActivityIndicator size="large" color="#ec4899" />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
       {/* Header */}
-      <View className="px-6 py-4 border-b border-gray-200">
-        <Text className="text-3xl font-bold text-gray-900">History</Text>
-        <Text className="text-gray-600 mt-1">
+      <View className="px-6 py-4 border-b border-gray-800">
+        <Text className="text-3xl font-bold text-white">History</Text>
+        <Text className="text-gray-400 mt-1">
           {results.length} {results.length === 1 ? 'result' : 'results'}
         </Text>
       </View>
@@ -106,16 +106,16 @@ export default function HistoryScreen() {
       {/* Results List */}
       {results.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">
-          <Ionicons name="time-outline" size={64} color="#d1d5db" />
-          <Text className="text-gray-500 text-lg font-semibold mt-4">
+          <Ionicons name="time-outline" size={64} color="#4b5563" />
+          <Text className="text-gray-400 text-lg font-semibold mt-4">
             No Results Yet
           </Text>
-          <Text className="text-gray-400 text-center mt-2">
+          <Text className="text-gray-500 text-center mt-2">
             Take the quiz to discover your aesthetic era
           </Text>
           <TouchableOpacity
             onPress={() => router.push('/(protected)/quiz')}
-            className="bg-blue-600 rounded-xl px-6 py-3 mt-6"
+            className="bg-pink-500 rounded-xl px-6 py-3 mt-6"
           >
             <Text className="text-white font-semibold">Take Quiz</Text>
           </TouchableOpacity>
@@ -130,7 +130,7 @@ export default function HistoryScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#2563eb"
+              tintColor="#ec4899"
             />
           }
         />

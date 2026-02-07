@@ -87,16 +87,16 @@ export default function ChallengeScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563eb" />
+          <ActivityIndicator size="large" color="#ec4899" />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -104,10 +104,10 @@ export default function ChallengeScreen() {
         <ScrollView className="flex-1" contentContainerClassName="p-6">
           {/* Header */}
           <View className="mb-6">
-            <Text className="text-3xl font-bold text-gray-900 mb-2">
+            <Text className="text-3xl font-bold text-white mb-2">
               Daily Challenge
             </Text>
-            <Text className="text-gray-600">
+            <Text className="text-gray-400">
               {new Date().toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
@@ -133,14 +133,14 @@ export default function ChallengeScreen() {
 
           {/* Challenge Card */}
           {challenge && (
-            <View className="bg-purple-50 rounded-2xl p-6 mb-6">
+            <View className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
               <View className="flex-row items-center mb-3">
-                <Ionicons name="bulb" size={24} color="#9333ea" />
-                <Text className="text-purple-900 text-lg font-bold ml-2">
+                <Ionicons name="bulb" size={24} color="#ec4899" />
+                <Text className="text-white text-lg font-bold ml-2">
                   Today's Challenge
                 </Text>
               </View>
-              <Text className="text-purple-900 text-base leading-6">
+              <Text className="text-gray-300 text-base leading-6">
                 {challenge.challenge_text}
               </Text>
             </View>
@@ -149,13 +149,13 @@ export default function ChallengeScreen() {
           {/* Response Input */}
           {challenge && (
             <View className="mb-6">
-              <Text className="text-gray-900 font-semibold text-lg mb-3">
+              <Text className="text-white font-semibold text-lg mb-3">
                 Your Response
               </Text>
               <TextInput
-                className="bg-gray-100 rounded-xl p-4 text-gray-900 text-base min-h-32"
+                className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-white text-base min-h-32"
                 placeholder="Share your thoughts..."
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#6b7280"
                 multiline
                 numberOfLines={6}
                 textAlignVertical="top"
@@ -167,7 +167,7 @@ export default function ChallengeScreen() {
               {challenge.has_responded && (
                 <View className="mt-3 flex-row items-center">
                   <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-                  <Text className="text-green-600 font-medium ml-2">
+                  <Text className="text-green-500 font-medium ml-2">
                     Response submitted!
                   </Text>
                 </View>
@@ -182,8 +182,8 @@ export default function ChallengeScreen() {
               disabled={submitting || !response.trim()}
               className={`rounded-xl py-4 items-center ${
                 submitting || !response.trim()
-                  ? 'bg-gray-300'
-                  : 'bg-blue-600'
+                  ? 'bg-gray-800'
+                  : 'bg-pink-500'
               }`}
             >
               {submitting ? (
@@ -197,11 +197,11 @@ export default function ChallengeScreen() {
           )}
 
           {/* Info */}
-          <View className="mt-6 bg-blue-50 rounded-xl p-4">
-            <Text className="text-blue-900 font-semibold mb-1">
+          <View className="mt-6 bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <Text className="text-pink-400 font-semibold mb-1">
               Daily Challenge Streak
             </Text>
-            <Text className="text-blue-700 text-sm">
+            <Text className="text-gray-400 text-sm">
               Complete daily challenges to maintain your streak and unlock
               exclusive badges!
             </Text>

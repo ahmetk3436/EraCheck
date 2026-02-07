@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../lib/api';
 import { hapticSuccess, hapticError, hapticLight } from '../../../lib/haptics';
 
@@ -28,6 +29,7 @@ interface EraResult {
 
 export default function QuizHomeScreen() {
   const router = useRouter();
+  const { isGuest, guestUsageCount, canUseFeature, isAuthenticated } = useAuth();
   const [streak, setStreak] = useState<Streak | null>(null);
   const [latestResult, setLatestResult] = useState<EraResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,10 @@ export default function QuizHomeScreen() {
   }, []);
 
   const loadData = async () => {
+    if (isGuest && !isAuthenticated) {
+      setLoading(false);
+      return;
+    }
     try {
       const [streakRes, resultsRes] = await Promise.all([
         api.get('/era/streak'),
@@ -57,6 +63,17 @@ export default function QuizHomeScreen() {
   };
 
   const handleStartQuiz = () => {
+    if (!canUseFeature()) {
+      Alert.alert(
+        'Free Uses Exhausted',
+        'You have used all 3 free tries. Create an account to continue!',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign Up', onPress: () => router.push('/(auth)/register') },
+        ]
+      );
+      return;
+    }
     hapticLight();
     router.push('/(protected)/quiz');
   };
@@ -70,26 +87,45 @@ export default function QuizHomeScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563eb" />
+          <ActivityIndicator size="large" color="#ec4899" />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
       <ScrollView className="flex-1" contentContainerClassName="p-6">
         {/* Header */}
         <View className="mb-8">
-          <Text className="text-4xl font-bold text-gray-900 mb-2">
+          <Text className="text-4xl font-bold text-white mb-2">
             EraCheck
           </Text>
-          <Text className="text-lg text-gray-600">
+          <Text className="text-lg text-gray-400">
             Discover Your Aesthetic Era
           </Text>
         </View>
+
+        {/* Guest Usage Badge */}
+        {isGuest && !isAuthenticated && (
+          <View className="bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-6 flex-row items-center">
+            <Ionicons name="person-outline" size={24} color="#ec4899" />
+            <View className="ml-3 flex-1">
+              <Text className="text-white font-semibold">Guest Mode</Text>
+              <Text className="text-gray-400 text-sm">
+                {3 - guestUsageCount} free {3 - guestUsageCount === 1 ? 'use' : 'uses'} remaining
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push('/(auth)/register')}
+              className="bg-pink-500 rounded-lg px-3 py-1.5"
+            >
+              <Text className="text-white text-xs font-semibold">Sign Up</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Streak Badge */}
         {streak && streak.current_streak > 0 && (
@@ -134,7 +170,7 @@ export default function QuizHomeScreen() {
         {/* Start Quiz Button */}
         <TouchableOpacity
           onPress={handleStartQuiz}
-          className="bg-blue-600 rounded-2xl p-6 items-center shadow-lg"
+          className="bg-pink-500 rounded-2xl p-6 items-center shadow-lg"
         >
           <Ionicons name="sparkles" size={32} color="#fff" />
           <Text className="text-white text-xl font-bold mt-2">
@@ -147,29 +183,29 @@ export default function QuizHomeScreen() {
 
         {/* Info Cards */}
         <View className="mt-8 space-y-4">
-          <View className="bg-purple-50 rounded-xl p-4">
-            <Text className="text-purple-900 font-semibold mb-1">
+          <View className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <Text className="text-purple-400 font-semibold mb-1">
               10 Unique Eras
             </Text>
-            <Text className="text-purple-700 text-sm">
+            <Text className="text-gray-400 text-sm">
               Y2K, Indie Sleaze, Cottagecore, Dark Academia, and more
             </Text>
           </View>
 
-          <View className="bg-pink-50 rounded-xl p-4">
-            <Text className="text-pink-900 font-semibold mb-1">
+          <View className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <Text className="text-pink-400 font-semibold mb-1">
               Personalized Results
             </Text>
-            <Text className="text-pink-700 text-sm">
+            <Text className="text-gray-400 text-sm">
               Get detailed insights into your style, music, and vibes
             </Text>
           </View>
 
-          <View className="bg-blue-50 rounded-xl p-4">
-            <Text className="text-blue-900 font-semibold mb-1">
+          <View className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <Text className="text-blue-400 font-semibold mb-1">
               Share & Compare
             </Text>
-            <Text className="text-blue-700 text-sm">
+            <Text className="text-gray-400 text-sm">
               Share your era with friends and see who matches your vibe
             </Text>
           </View>

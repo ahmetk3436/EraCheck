@@ -89,9 +89,9 @@ export default function ResultsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-gray-950">
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563eb" />
+          <ActivityIndicator size="large" color="#ec4899" />
         </View>
       </SafeAreaView>
     );
@@ -106,18 +106,18 @@ export default function ResultsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-gray-950">
       {/* Header */}
-      <View className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200">
+      <View className="px-6 py-4 flex-row items-center justify-between border-b border-gray-800">
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={28} color="#000" />
+          <Ionicons name="arrow-back" size={28} color="#fff" />
         </TouchableOpacity>
-        <Text className="text-lg font-semibold text-gray-900">Your Era</Text>
+        <Text className="text-lg font-semibold text-white">Your Era</Text>
         <TouchableOpacity onPress={handleShare} disabled={sharing}>
           {sharing ? (
-            <ActivityIndicator size="small" color="#2563eb" />
+            <ActivityIndicator size="small" color="#ec4899" />
           ) : (
-            <Ionicons name="share-outline" size={28} color="#2563eb" />
+            <Ionicons name="share-outline" size={28} color="#ec4899" />
           )}
         </TouchableOpacity>
       </View>
@@ -139,10 +139,10 @@ export default function ResultsScreen() {
 
         {/* Description */}
         <View className="mx-6 mt-6">
-          <Text className="text-xl font-bold text-gray-900 mb-3">
+          <Text className="text-xl font-bold text-white mb-3">
             About Your Era
           </Text>
-          <Text className="text-gray-700 text-base leading-6">
+          <Text className="text-gray-300 text-base leading-6">
             {result.description}
           </Text>
         </View>
@@ -150,12 +150,12 @@ export default function ResultsScreen() {
         {/* Music Taste */}
         <View className="mx-6 mt-6">
           <View className="flex-row items-center mb-3">
-            <Ionicons name="musical-notes" size={24} color="#2563eb" />
-            <Text className="text-xl font-bold text-gray-900 ml-2">
+            <Ionicons name="musical-notes" size={24} color="#ec4899" />
+            <Text className="text-xl font-bold text-white ml-2">
               Music Taste
             </Text>
           </View>
-          <Text className="text-gray-700 text-base leading-6">
+          <Text className="text-gray-300 text-base leading-6">
             {result.music_taste}
           </Text>
         </View>
@@ -163,19 +163,19 @@ export default function ResultsScreen() {
         {/* Style Traits */}
         <View className="mx-6 mt-6">
           <View className="flex-row items-center mb-3">
-            <Ionicons name="shirt" size={24} color="#2563eb" />
-            <Text className="text-xl font-bold text-gray-900 ml-2">
+            <Ionicons name="shirt" size={24} color="#ec4899" />
+            <Text className="text-xl font-bold text-white ml-2">
               Style Traits
             </Text>
           </View>
-          <Text className="text-gray-700 text-base leading-6">
+          <Text className="text-gray-300 text-base leading-6">
             {result.style_traits}
           </Text>
         </View>
 
         {/* Era Scores */}
         <View className="mx-6 mt-6">
-          <Text className="text-xl font-bold text-gray-900 mb-4">
+          <Text className="text-xl font-bold text-white mb-4">
             Your Era Breakdown
           </Text>
           <View className="space-y-4">
@@ -184,23 +184,23 @@ export default function ResultsScreen() {
               .map((item, index) => (
                 <View key={item.era}>
                   <View className="flex-row items-center justify-between mb-2">
-                    <Text className="text-gray-900 font-semibold">
+                    <Text className="text-white font-semibold">
                       {item.era}
                     </Text>
-                    <Text className="text-gray-600 font-medium">
+                    <Text className="text-gray-400 font-medium">
                       {Math.round(item.score)}%
                     </Text>
                   </View>
-                  <View className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <View className="h-3 bg-gray-800 rounded-full overflow-hidden">
                     <View
                       className={`h-full ${
                         index === 0
-                          ? 'bg-blue-600'
+                          ? 'bg-pink-500'
                           : index === 1
                           ? 'bg-purple-500'
                           : index === 2
-                          ? 'bg-pink-500'
-                          : 'bg-gray-400'
+                          ? 'bg-fuchsia-500'
+                          : 'bg-gray-600'
                       }`}
                       style={{ width: getScoreBarWidth(item.score) }}
                     />
@@ -215,7 +215,7 @@ export default function ResultsScreen() {
           <TouchableOpacity
             onPress={handleShare}
             disabled={sharing}
-            className="bg-blue-600 rounded-xl py-4 items-center flex-row justify-center"
+            className="bg-pink-500 rounded-xl py-4 items-center flex-row justify-center"
           >
             <Ionicons name="share-social" size={24} color="#fff" />
             <Text className="text-white font-semibold text-lg ml-2">
@@ -225,9 +225,9 @@ export default function ResultsScreen() {
 
           <TouchableOpacity
             onPress={handleRetake}
-            className="bg-gray-200 rounded-xl py-4 items-center"
+            className="bg-gray-800 rounded-xl py-4 items-center"
           >
-            <Text className="text-gray-900 font-semibold text-lg">
+            <Text className="text-white font-semibold text-lg">
               Retake Quiz
             </Text>
           </TouchableOpacity>

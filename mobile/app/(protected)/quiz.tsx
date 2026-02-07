@@ -99,9 +99,9 @@ export default function QuizScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-gray-950">
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563eb" />
+          <ActivityIndicator size="large" color="#ec4899" />
         </View>
       </SafeAreaView>
     );
@@ -113,23 +113,23 @@ export default function QuizScreen() {
   const currentAnswer = currentQuestion ? answers[currentQuestion.id] : null;
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-gray-950">
       {/* Header */}
-      <View className="px-6 py-4 border-b border-gray-200">
+      <View className="px-6 py-4 border-b border-gray-800">
         <View className="flex-row items-center justify-between mb-3">
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="close" size={28} color="#000" />
+            <Ionicons name="close" size={28} color="#fff" />
           </TouchableOpacity>
-          <Text className="text-lg font-semibold text-gray-900">
+          <Text className="text-lg font-semibold text-white">
             Question {currentIndex + 1}/{questions.length}
           </Text>
           <View className="w-7" />
         </View>
 
         {/* Progress Bar */}
-        <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
+        <View className="h-2 bg-gray-800 rounded-full overflow-hidden">
           <View
-            className="h-full bg-blue-600"
+            className="h-full bg-pink-500"
             style={{ width: `${progress}%` }}
           />
         </View>
@@ -137,7 +137,7 @@ export default function QuizScreen() {
 
       <ScrollView className="flex-1 px-6 py-6">
         {/* Question */}
-        <Text className="text-2xl font-bold text-gray-900 mb-6">
+        <Text className="text-2xl font-bold text-white mb-6">
           {currentQuestion.question}
         </Text>
 
@@ -151,14 +151,14 @@ export default function QuizScreen() {
                 onPress={() => handleSelectOption(option.id)}
                 className={`rounded-xl p-4 border-2 ${
                   isSelected
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 bg-white'
+                    ? 'border-pink-500 bg-pink-500/10'
+                    : 'border-gray-800 bg-gray-900'
                 }`}
               >
                 <View className="flex-row items-center">
                   <View
                     className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${
-                      isSelected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                      isSelected ? 'border-pink-500 bg-pink-500' : 'border-gray-600'
                     }`}
                   >
                     {isSelected && (
@@ -167,7 +167,7 @@ export default function QuizScreen() {
                   </View>
                   <Text
                     className={`flex-1 text-base ${
-                      isSelected ? 'text-blue-900 font-semibold' : 'text-gray-800'
+                      isSelected ? 'text-pink-300 font-semibold' : 'text-gray-300'
                     }`}
                   >
                     {option.text}
@@ -180,13 +180,13 @@ export default function QuizScreen() {
       </ScrollView>
 
       {/* Navigation */}
-      <View className="px-6 py-4 border-t border-gray-200 flex-row gap-3">
+      <View className="px-6 py-4 border-t border-gray-800 flex-row gap-3">
         {currentIndex > 0 && (
           <TouchableOpacity
             onPress={handlePrevious}
-            className="flex-1 bg-gray-200 rounded-xl py-4 items-center"
+            className="flex-1 bg-gray-800 rounded-xl py-4 items-center"
           >
-            <Text className="text-gray-900 font-semibold text-base">
+            <Text className="text-white font-semibold text-base">
               Previous
             </Text>
           </TouchableOpacity>
@@ -196,7 +196,7 @@ export default function QuizScreen() {
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={submitting}
-            className="flex-1 bg-blue-600 rounded-xl py-4 items-center"
+            className="flex-1 bg-pink-500 rounded-xl py-4 items-center"
           >
             {submitting ? (
               <ActivityIndicator size="small" color="#fff" />

@@ -67,17 +67,17 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-gray-950">
       <View className="flex-1 px-6 pt-8">
-        <Text className="mb-8 text-3xl font-bold text-gray-900">Settings</Text>
+        <Text className="mb-8 text-3xl font-bold text-white">Settings</Text>
 
         {/* Account Section */}
         <Text className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
           Account
         </Text>
-        <View className="mb-6 rounded-xl bg-gray-50 p-4">
-          <Text className="text-sm text-gray-500">Email</Text>
-          <Text className="mt-0.5 text-base font-medium text-gray-900">
+        <View className="mb-6 rounded-xl bg-gray-900 border border-gray-800 p-4">
+          <Text className="text-sm text-gray-400">Email</Text>
+          <Text className="mt-0.5 text-base font-medium text-white">
             {user?.email}
           </Text>
         </View>
@@ -86,26 +86,26 @@ export default function SettingsScreen() {
         <Text className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
           Security
         </Text>
-        <View className="mb-6 rounded-xl bg-gray-50">
+        <View className="mb-6 rounded-xl bg-gray-900 border border-gray-800">
           {biometricType && (
-            <View className="flex-row items-center justify-between border-b border-gray-200 p-4">
+            <View className="flex-row items-center justify-between border-b border-gray-800 p-4">
               <View>
-                <Text className="text-base font-medium text-gray-900">
+                <Text className="text-base font-medium text-white">
                   {biometricType}
                 </Text>
-                <Text className="text-sm text-gray-500">
+                <Text className="text-sm text-gray-400">
                   Use {biometricType} to unlock the app
                 </Text>
               </View>
               <Switch
                 value={biometricEnabled}
                 onValueChange={setBiometricEnabled}
-                trackColor={{ true: '#2563eb' }}
+                trackColor={{ true: '#ec4899' }}
               />
             </View>
           )}
           <Pressable className="p-4" onPress={logout}>
-            <Text className="text-base font-medium text-gray-900">
+            <Text className="text-base font-medium text-white">
               Sign Out
             </Text>
           </Pressable>
@@ -115,9 +115,9 @@ export default function SettingsScreen() {
         <Text className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
           Purchases
         </Text>
-        <View className="mb-6 rounded-xl bg-gray-50">
+        <View className="mb-6 rounded-xl bg-gray-900 border border-gray-800">
           <Pressable className="p-4" onPress={handleRestorePurchases}>
-            <Text className="text-base font-medium text-primary-600">
+            <Text className="text-base font-medium text-pink-500">
               Restore Purchases
             </Text>
           </Pressable>
@@ -127,12 +127,12 @@ export default function SettingsScreen() {
         <Text className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
           Danger Zone
         </Text>
-        <View className="rounded-xl bg-red-50">
+        <View className="rounded-xl bg-red-950/30 border border-red-900">
           <Pressable className="p-4" onPress={confirmDelete}>
-            <Text className="text-base font-medium text-red-600">
+            <Text className="text-base font-medium text-red-500">
               Delete Account
             </Text>
-            <Text className="mt-0.5 text-sm text-red-400">
+            <Text className="mt-0.5 text-sm text-red-400/70">
               Permanently remove all your data
             </Text>
           </Pressable>
@@ -145,7 +145,7 @@ export default function SettingsScreen() {
         onClose={() => setShowDeleteModal(false)}
         title="Confirm Deletion"
       >
-        <Text className="mb-4 text-sm text-gray-600">
+        <Text className="mb-4 text-sm text-gray-400">
           Enter your password to confirm account deletion. This cannot be undone.
         </Text>
         <View className="mb-4">
