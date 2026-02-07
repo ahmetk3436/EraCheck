@@ -1,7 +1,7 @@
 package services
 
 import (
-	"fmt"
+	"errors"
 	"math/rand"
 	"strings"
 	"time"
@@ -11,31 +11,31 @@ import (
 	"gorm.io/gorm"
 )
 
-// ChallengeService handles the generation of daily challenges and validation of user inputs.
+// ChallengeService handles daily challenge logic.
 type ChallengeService struct {
 	db *gorm.DB
 }
 
-// NewChallengeService creates a new instance of ChallengeService.
+// NewChallengeService creates a new ChallengeService.
 func NewChallengeService(db *gorm.DB) *ChallengeService {
 	return &ChallengeService{db: db}
 }
 
-// challengePrompts holds the pool of daily challenge prompts.
+// challengePrompts is the pool of daily challenge prompts.
 var challengePrompts = []string{
-	"Create an outfit inspired by your favorite album cover.",
-	"Take a photo of your workspace that reflects your current era.",
-	"Find a color palette in nature that matches your aesthetic.",
-	"Style a monochromatic look using only one color.",
-	"Curate a playlist that defines your 'villain era'.",
-	"Describe your dream room aesthetic in three words.",
-	"What movie character best represents your current style?",
-	"Create a mood board using only items around you right now.",
-	"Pick a song that captures your energy today and explain why.",
-	"What era would your best friend say you belong to?",
+	"Describe your dream outfit for a night out.",
+	"What does your ideal workspace look like?",
+	"If you could live in any decade, which one and why?",
+	"Create a mood board description for your aesthetic.",
+	"What's your signature accessory?",
+	"Describe your go-to weekend look.",
+	"If your vibe were a song, what would it be?",
+	"What does your ideal brunch setup look like?",
+	"Describe your dream vacation aesthetic.",
+	"How would your friends describe your style in 3 words?",
 }
 
-// GetDailyChallenge retrieves or creates today's challenge for the user.
+// GetDailyChallenge retrieves or creates today's challenge for a user.
 func (s *ChallengeService) GetDailyChallenge(userID uuid.UUID) (*models.EraChallenge, error) {
 	today := time.Now().Truncate(24 * time.Hour)
 
@@ -45,7 +45,7 @@ func (s *ChallengeService) GetDailyChallenge(userID uuid.UUID) (*models.EraChall
 		return &challenge, nil
 	}
 
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 
@@ -71,19 +71,20 @@ func (s *ChallengeService) SubmitChallengeResponse(userID uuid.UUID, response st
 	var challenge models.EraChallenge
 	err := s.db.Where("user_id = ? AND challenge_date = ?", userID, today).First(&challenge).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("no challenge found for today, fetch the daily challenge first")
-		}
-		return nil, err
+		return nil, errors.New("no challenge found for today — get today's challenge first")
 	}
 
 	if challenge.Response != "" {
-		return nil, fmt.Errorf("you have already submitted a response for today's challenge")
+		return nil, errors.New("you have already responded to today's challenge")
 	}
 
-	// Detect era from response using keyword matching
+	era := detectEraFromResponse(response)
+	if era == "unknown" {
+		era = "2022_clean_girl"
+	}
+
 	challenge.Response = response
-	challenge.Era = detectEraFromText(response)
+	challenge.Era = era
 
 	if err := s.db.Save(&challenge).Error; err != nil {
 		return nil, err
@@ -92,8 +93,11 @@ func (s *ChallengeService) SubmitChallengeResponse(userID uuid.UUID, response st
 	return &challenge, nil
 }
 
-// GetChallengeHistory retrieves the user's past challenge responses.
+// GetChallengeHistory retrieves past challenges for a user.
 func (s *ChallengeService) GetChallengeHistory(userID uuid.UUID, limit int) ([]models.EraChallenge, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 30
+	}
 	var challenges []models.EraChallenge
 	err := s.db.Where("user_id = ?", userID).
 		Order("challenge_date DESC").
@@ -102,39 +106,30 @@ func (s *ChallengeService) GetChallengeHistory(userID uuid.UUID, limit int) ([]m
 	return challenges, err
 }
 
-// detectEraFromText uses keyword matching to assign an era to text.
-func detectEraFromText(text string) string {
-	lower := strings.ToLower(text)
+// detectEraFromResponse analyzes user text input to determine the most likely era.
+func detectEraFromResponse(input string) string {
+	lowerInput := strings.ToLower(input)
 
-	eraKeywords := map[string][]string{
-		"2016_tumblr":     {"tumblr", "grunge", "indie", "flannel", "band tee", "dark", "angst", "aesthetic"},
-		"2018_vsco":       {"vsco", "hydro", "scrunchie", "turtle", "beach", "sunset", "good vibes"},
-		"2020_cottagecore": {"cottage", "garden", "baking", "flower", "prairie", "mushroom", "fairy", "folklore"},
-		"2022_clean_girl": {"clean", "minimal", "neutral", "slick", "hoop", "effortless", "simple"},
-		"2024_mob_wife":   {"mob", "fur", "luxury", "bold", "boss", "power", "leopard", "gold"},
-		"2025_demure":     {"demure", "modest", "ribbon", "bow", "pastel", "cute", "elegant", "soft"},
+	keywords := map[string][]string{
+		"y2k":              {"y2k", "2000s", "butterfly", "paris", "bedazzled", "glitter", "britney", "juicy"},
+		"2016_tumblr":      {"tumblr", "pastel", "galaxy", "grunge", "choker", "flannel", "indie", "band tee"},
+		"2018_vsco":        {"vsco", "scrunchie", "hydro", "flask", "puka", "shell", "beach", "chill"},
+		"2020_cottagecore": {"cottage", "bread", "prairie", "floral", "nature", "picnic", "baking", "folk"},
+		"dark_academia":    {"academia", "library", "poetry", "classical", "vintage", "tweed", "blazer", "hozier"},
+		"indie_sleaze":     {"indie", "sleaze", "party", "messy", "leather", "punk", "strokes", "warehouse"},
+		"2022_clean_girl":  {"clean", "minimal", "slicked", "gold", "neutral", "polished", "blazer", "loafer"},
+		"2024_mob_wife":    {"mob", "wife", "fur", "leopard", "luxury", "bold", "sunglasses", "chanel"},
+		"coastal_cowgirl":  {"cowgirl", "boots", "beach", "turquoise", "western", "sunset", "kacey", "denim"},
+		"2025_demure":      {"demure", "mindful", "cutesy", "modest", "bow", "polite", "soft", "pink"},
 	}
 
-	bestEra := "2022_clean_girl" // default
-	bestScore := 0
-
-	for era, keywords := range eraKeywords {
-		score := 0
-		for _, kw := range keywords {
-			if contains(lower, kw) {
-				score++
+	for eraKey, words := range keywords {
+		for _, word := range words {
+			if strings.Contains(lowerInput, word) {
+				return eraKey
 			}
 		}
-		if score > bestScore {
-			bestScore = score
-			bestEra = era
-		}
 	}
 
-	return bestEra
-}
-
-// contains checks if the substr is present in the string s.
-func contains(s, substr string) bool {
-	return strings.Contains(s, substr)
+	return "unknown"
 }

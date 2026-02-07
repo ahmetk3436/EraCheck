@@ -12,21 +12,33 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useSubscription } from '../../../contexts/SubscriptionContext';
 import api from '../../../lib/api';
 import { hapticSuccess, hapticError, hapticLight } from '../../../lib/haptics';
 
+interface FavoriteEraProfile {
+  key: string;
+  title: string;
+  emoji: string;
+  color: string;
+  description: string;
+  music_taste: string;
+  style_traits: string;
+}
+
 interface EraStats {
-  total_quizzes: number;
+  quizzes_taken: number;
   total_shares: number;
   current_streak: number;
   longest_streak: number;
   favorite_era: string;
-  favorite_era_emoji: string;
+  favorite_era_profile?: FavoriteEraProfile;
 }
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, logout, deleteAccount, isGuest, isAuthenticated } = useAuth();
+  const { isSubscribed, handleRestore } = useSubscription();
   const [stats, setStats] = useState<EraStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -42,7 +54,9 @@ export default function SettingsScreen() {
     }
     try {
       const { data } = await api.get('/era/stats');
-      setStats(data);
+      // Extract from envelope
+      const statsData = data.stats || data;
+      setStats(statsData);
     } catch (error: any) {
       console.error('Failed to load stats:', error);
       hapticError();
@@ -105,7 +119,18 @@ export default function SettingsScreen() {
 
   const handleRestorePurchases = async () => {
     hapticLight();
-    Alert.alert('Info', 'Restore purchases feature coming soon!');
+    try {
+      const restored = await handleRestore();
+      if (restored) {
+        hapticSuccess();
+        Alert.alert('Success', 'Your purchases have been restored!');
+      } else {
+        Alert.alert('Not Found', 'No previous purchases found.');
+      }
+    } catch {
+      hapticError();
+      Alert.alert('Error', 'Failed to restore purchases.');
+    }
   };
 
   return (
@@ -123,7 +148,10 @@ export default function SettingsScreen() {
 
         {/* Guest CTA Card */}
         {isGuest && !isAuthenticated && (
-          <View className="bg-gray-900 border border-pink-500/30 rounded-2xl p-6 mb-6">
+          <View
+            className="rounded-2xl p-6 mb-6"
+            style={{ backgroundColor: '#111827', borderWidth: 1, borderColor: 'rgba(236,72,153,0.3)' }}
+          >
             <View className="flex-row items-center mb-3">
               <Ionicons name="sparkles" size={24} color="#ec4899" />
               <Text className="text-white text-lg font-bold ml-2">
@@ -135,7 +163,8 @@ export default function SettingsScreen() {
             </Text>
             <TouchableOpacity
               onPress={() => router.push('/(auth)/register')}
-              className="bg-pink-500 rounded-xl py-3 items-center"
+              className="rounded-xl py-3 items-center"
+              style={{ backgroundColor: '#ec4899' }}
             >
               <Text className="text-white font-semibold text-base">
                 Sign Up Free
@@ -144,34 +173,56 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        {/* Premium Upsell */}
+        {isAuthenticated && !isSubscribed && (
+          <TouchableOpacity
+            onPress={() => router.push('/(protected)/paywall')}
+            className="rounded-2xl p-5 mb-6 shadow-md"
+            style={{ backgroundColor: '#ec4899' }}
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="diamond-outline" size={28} color="#fff" />
+              <View className="ml-3 flex-1">
+                <Text className="text-white font-bold text-lg">
+                  Upgrade to Premium
+                </Text>
+                <Text style={{ color: 'rgba(255,255,255,0.8)' }} className="text-sm">
+                  Unlimited quizzes, exclusive eras, no ads
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#fff" />
+            </View>
+          </TouchableOpacity>
+        )}
+
         {/* Stats Card */}
         {loading ? (
           <View className="bg-gray-900 border border-gray-800 rounded-2xl p-6 items-center mb-6">
             <ActivityIndicator size="large" color="#ec4899" />
           </View>
         ) : stats ? (
-          <View className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-6 mb-6">
+          <View className="rounded-2xl p-6 mb-6 shadow-lg" style={{ backgroundColor: '#9333ea' }}>
             <Text className="text-white text-xl font-bold mb-4">
               Your Era Stats
             </Text>
 
-            <View className="space-y-3">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-white/90">Total Quizzes</Text>
+            <View>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text style={{ color: 'rgba(255,255,255,0.9)' }}>Total Quizzes</Text>
                 <Text className="text-white font-bold text-lg">
-                  {stats.total_quizzes}
+                  {stats.quizzes_taken}
                 </Text>
               </View>
 
-              <View className="flex-row items-center justify-between">
-                <Text className="text-white/90">Total Shares</Text>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text style={{ color: 'rgba(255,255,255,0.9)' }}>Total Shares</Text>
                 <Text className="text-white font-bold text-lg">
                   {stats.total_shares}
                 </Text>
               </View>
 
-              <View className="flex-row items-center justify-between">
-                <Text className="text-white/90">Current Streak</Text>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text style={{ color: 'rgba(255,255,255,0.9)' }}>Current Streak</Text>
                 <View className="flex-row items-center">
                   <Ionicons name="flame" size={20} color="#fff" />
                   <Text className="text-white font-bold text-lg ml-1">
@@ -180,22 +231,24 @@ export default function SettingsScreen() {
                 </View>
               </View>
 
-              <View className="flex-row items-center justify-between">
-                <Text className="text-white/90">Longest Streak</Text>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text style={{ color: 'rgba(255,255,255,0.9)' }}>Longest Streak</Text>
                 <Text className="text-white font-bold text-lg">
                   {stats.longest_streak} days
                 </Text>
               </View>
 
-              {stats.favorite_era && (
-                <View className="mt-3 pt-3 border-t border-white/20">
-                  <Text className="text-white/90 mb-2">Favorite Era</Text>
+              {stats.favorite_era_profile && (
+                <View className="mt-3 pt-3" style={{ borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)' }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.9)' }} className="mb-2">
+                    Favorite Era
+                  </Text>
                   <View className="flex-row items-center">
                     <Text className="text-4xl mr-3">
-                      {stats.favorite_era_emoji}
+                      {stats.favorite_era_profile.emoji}
                     </Text>
                     <Text className="text-white font-bold text-lg">
-                      {stats.favorite_era}
+                      {stats.favorite_era_profile.title}
                     </Text>
                   </View>
                 </View>
@@ -239,6 +292,26 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        {/* About Section */}
+        <View className="mb-6">
+          <Text className="text-gray-400 text-sm font-semibold uppercase mb-3">
+            About
+          </Text>
+
+          <TouchableOpacity
+            onPress={() => Linking.openURL('https://example.com/terms')}
+            className="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-3 flex-row items-center justify-between"
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="document-text-outline" size={24} color="#ec4899" />
+              <Text className="text-white font-medium ml-3">
+                Terms of Service
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+          </TouchableOpacity>
+        </View>
+
         {/* Actions Section */}
         {isAuthenticated && (
           <View className="mb-6">
@@ -257,7 +330,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               onPress={handleDeleteAccount}
               disabled={deleting}
-              className="bg-gray-900 border border-red-900 rounded-xl p-4 flex-row items-center"
+              className="bg-gray-900 rounded-xl p-4 flex-row items-center"
+              style={{ borderWidth: 1, borderColor: '#7f1d1d' }}
             >
               {deleting ? (
                 <ActivityIndicator size="small" color="#ef4444" />

@@ -64,9 +64,9 @@ func (s *EraService) SubmitQuizAnswers(userID uuid.UUID, answers map[string]int)
 		}
 	}
 
-	profile := GetEraByID(bestEra)
-	if profile == nil {
-		profile = &Eras[0]
+	profile, ok := GetEraProfile(bestEra)
+	if !ok {
+		profile = EraProfiles["2022_clean_girl"]
 	}
 
 	// Build scores JSON
@@ -74,8 +74,8 @@ func (s *EraService) SubmitQuizAnswers(userID uuid.UUID, answers map[string]int)
 
 	result := &models.EraResult{
 		UserID:         userID,
-		Era:            profile.ID,
-		EraTitle:       profile.Name,
+		Era:            profile.Key,
+		EraTitle:       profile.Title,
 		EraEmoji:       profile.Emoji,
 		EraDescription: profile.Description,
 		EraColor:       profile.Color,
@@ -145,6 +145,30 @@ func (s *EraService) GetEraStats(userID uuid.UUID) (map[string]interface{}, erro
 	var quizCount int64
 	s.db.Model(&models.EraResult{}).Where("user_id = ?", userID).Count(&quizCount)
 	stats["quizzes_taken"] = quizCount
+
+	// Favorite era (most common result)
+	if quizCount > 0 {
+		var favoriteEra string
+		s.db.Model(&models.EraResult{}).
+			Select("era").
+			Where("user_id = ?", userID).
+			Group("era").
+			Order("COUNT(*) DESC").
+			Limit(1).
+			Scan(&favoriteEra)
+		stats["favorite_era"] = favoriteEra
+		if profile, ok := GetEraProfile(favoriteEra); ok {
+			stats["favorite_era_profile"] = map[string]string{
+				"key":          profile.Key,
+				"title":        profile.Title,
+				"emoji":        profile.Emoji,
+				"color":        profile.Color,
+				"description":  profile.Description,
+				"music_taste":  profile.MusicTaste,
+				"style_traits": profile.StyleTraits,
+			}
+		}
+	}
 
 	return stats, nil
 }

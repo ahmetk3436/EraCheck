@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { View, Text, KeyboardAvoidingView, Platform, Pressable, TouchableOpacity } from 'react-native';
 import { Link, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import AppleSignInButton from '../../components/ui/AppleSignInButton';
+import { hapticLight } from '../../lib/haptics';
 
 export default function LoginScreen() {
   const { login, continueAsGuest } = useAuth();
@@ -16,6 +18,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     setError('');
+    hapticLight();
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
@@ -34,6 +37,7 @@ export default function LoginScreen() {
   };
 
   const handleGuestMode = async () => {
+    hapticLight();
     await continueAsGuest();
     router.replace('/(protected)/(tabs)');
   };
@@ -44,12 +48,16 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View className="flex-1 justify-center px-8">
-        <Text className="mb-2 text-3xl font-bold text-white">
-          Welcome back
-        </Text>
-        <Text className="mb-8 text-base text-gray-400">
-          Sign in to your account
-        </Text>
+        {/* Branded Header */}
+        <View className="items-center mb-8">
+          <Ionicons name="sparkles" size={48} color="#ec4899" />
+          <Text className="text-3xl font-bold mt-4" style={{ color: '#ec4899' }}>
+            EraCheck
+          </Text>
+          <Text className="text-lg text-gray-400 mt-2">
+            Welcome back
+          </Text>
+        </View>
 
         {error ? (
           <View className="mb-4 rounded-lg bg-red-900/30 border border-red-800 p-3">
@@ -87,7 +95,7 @@ export default function LoginScreen() {
           size="lg"
         />
 
-        {/* Sign in with Apple — equal visual prominence (Guideline 4.8) */}
+        {/* Sign in with Apple (Guideline 4.8) */}
         <AppleSignInButton onError={(msg) => setError(msg)} />
 
         {/* Try Without Account */}
@@ -103,9 +111,17 @@ export default function LoginScreen() {
         <View className="mt-6 flex-row items-center justify-center">
           <Text className="text-gray-400">Don't have an account? </Text>
           <Link href="/(auth)/register" asChild>
-            <Text className="font-semibold text-pink-500">Sign Up</Text>
+            <Text className="font-semibold" style={{ color: '#ec4899' }}>Sign Up</Text>
           </Link>
         </View>
+
+        {/* Skip for now */}
+        <TouchableOpacity
+          onPress={handleGuestMode}
+          className="items-center py-2 mt-4"
+        >
+          <Text className="text-gray-500 text-sm">Skip for now</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );

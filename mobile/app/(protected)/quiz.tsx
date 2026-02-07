@@ -12,13 +12,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../lib/api';
 import { hapticSuccess, hapticError, hapticLight } from '../../lib/haptics';
+import { useAuth } from '../../contexts/AuthContext';
+import { canTakeQuiz, incrementGuestQuizCount, isGuestMode } from '../../lib/guest';
 
 interface QuizOption {
-  id: string;
   text: string;
-  points: {
-    [key: string]: number;
-  };
+  era: string;
 }
 
 interface QuizQuestion {
@@ -29,9 +28,10 @@ interface QuizQuestion {
 
 export default function QuizScreen() {
   const router = useRouter();
+  const { incrementGuestUsage } = useAuth();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  const [answers, setAnswers] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,8 +41,25 @@ export default function QuizScreen() {
 
   const loadQuestions = async () => {
     try {
+      // Check guest limit
+      const allowed = await canTakeQuiz();
+      if (!allowed) {
+        Alert.alert(
+          'Free Limit Reached',
+          'Sign up for unlimited quizzes!',
+          [
+            { text: 'Sign Up', onPress: () => router.replace('/(auth)/register') },
+            { text: 'Get Premium', onPress: () => router.replace('/(protected)/paywall') },
+          ]
+        );
+        router.back();
+        return;
+      }
+
       const { data } = await api.get('/era/questions');
-      setQuestions(data);
+      // Extract questions from envelope
+      const questionsData = data.questions || data;
+      setQuestions(questionsData);
     } catch (error: any) {
       console.error('Failed to load questions:', error);
       hapticError();
@@ -53,12 +70,12 @@ export default function QuizScreen() {
     }
   };
 
-  const handleSelectOption = (optionId: string) => {
+  const handleSelectOption = (optionIndex: number) => {
     hapticLight();
     const currentQuestion = questions[currentIndex];
     setAnswers({
       ...answers,
-      [currentQuestion.id]: optionId,
+      [currentQuestion.id]: optionIndex,
     });
 
     // Auto-advance to next question after short delay
@@ -80,7 +97,18 @@ export default function QuizScreen() {
     try {
       const { data } = await api.post('/era/quiz', { answers });
       hapticSuccess();
-      router.replace(`/(protected)/results/${data.id}`);
+
+      // Increment guest usage if in guest mode
+      const guest = await isGuestMode();
+      if (guest) {
+        await incrementGuestQuizCount();
+        await incrementGuestUsage();
+      }
+
+      // Extract result ID from envelope: {error, data: {result, profile}}
+      const resultData = data.data || data;
+      const resultId = resultData.result?.id || resultData.id;
+      router.replace(`/(protected)/results/${resultId}`);
     } catch (error: any) {
       console.error('Failed to submit quiz:', error);
       hapticError();
@@ -107,10 +135,28 @@ export default function QuizScreen() {
     );
   }
 
+  if (questions.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-950">
+        <View className="flex-1 items-center justify-center px-8">
+          <Ionicons name="alert-circle-outline" size={64} color="#6b7280" />
+          <Text className="text-gray-400 text-lg mt-4">No questions available</Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="mt-6 rounded-xl px-6 py-3"
+            style={{ backgroundColor: '#ec4899' }}
+          >
+            <Text className="text-white font-semibold">Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const currentQuestion = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
   const isLastQuestion = currentIndex === questions.length - 1;
-  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : null;
+  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950">
@@ -123,14 +169,14 @@ export default function QuizScreen() {
           <Text className="text-lg font-semibold text-white">
             Question {currentIndex + 1}/{questions.length}
           </Text>
-          <View className="w-7" />
+          <View style={{ width: 28 }} />
         </View>
 
         {/* Progress Bar */}
         <View className="h-2 bg-gray-800 rounded-full overflow-hidden">
           <View
-            className="h-full bg-pink-500"
-            style={{ width: `${progress}%` }}
+            className="h-full"
+            style={{ width: `${progress}%`, backgroundColor: '#ec4899' }}
           />
         </View>
       </View>
@@ -142,33 +188,36 @@ export default function QuizScreen() {
         </Text>
 
         {/* Options */}
-        <View className="space-y-3">
-          {currentQuestion.options.map((option) => {
-            const isSelected = currentAnswer === option.id;
+        <View>
+          {currentQuestion.options.map((option: QuizOption, index: number) => {
+            const isSelected = currentAnswer === index;
             return (
               <TouchableOpacity
-                key={option.id}
-                onPress={() => handleSelectOption(option.id)}
-                className={`rounded-xl p-4 border-2 ${
-                  isSelected
-                    ? 'border-pink-500 bg-pink-500/10'
-                    : 'border-gray-800 bg-gray-900'
-                }`}
+                key={index}
+                onPress={() => handleSelectOption(index)}
+                className="rounded-xl p-4 mb-3"
+                style={{
+                  borderWidth: 2,
+                  borderColor: isSelected ? '#ec4899' : '#374151',
+                  backgroundColor: isSelected ? 'rgba(236,72,153,0.1)' : '#111827',
+                }}
               >
                 <View className="flex-row items-center">
                   <View
-                    className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${
-                      isSelected ? 'border-pink-500 bg-pink-500' : 'border-gray-600'
-                    }`}
+                    className="w-6 h-6 rounded-full items-center justify-center mr-3"
+                    style={{
+                      borderWidth: 2,
+                      borderColor: isSelected ? '#ec4899' : '#4b5563',
+                      backgroundColor: isSelected ? '#ec4899' : 'transparent',
+                    }}
                   >
                     {isSelected && (
                       <Ionicons name="checkmark" size={16} color="#fff" />
                     )}
                   </View>
                   <Text
-                    className={`flex-1 text-base ${
-                      isSelected ? 'text-pink-300 font-semibold' : 'text-gray-300'
-                    }`}
+                    className="flex-1 text-base"
+                    style={{ color: isSelected ? '#f9a8d4' : '#d1d5db' }}
                   >
                     {option.text}
                   </Text>
@@ -180,7 +229,7 @@ export default function QuizScreen() {
       </ScrollView>
 
       {/* Navigation */}
-      <View className="px-6 py-4 border-t border-gray-800 flex-row gap-3">
+      <View className="px-6 py-4 border-t border-gray-800 flex-row" style={{ gap: 12 }}>
         {currentIndex > 0 && (
           <TouchableOpacity
             onPress={handlePrevious}
@@ -196,7 +245,8 @@ export default function QuizScreen() {
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={submitting}
-            className="flex-1 bg-pink-500 rounded-xl py-4 items-center"
+            className="flex-1 rounded-xl py-4 items-center"
+            style={{ backgroundColor: '#ec4899' }}
           >
             {submitting ? (
               <ActivityIndicator size="small" color="#fff" />

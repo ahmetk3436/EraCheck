@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { Link } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import AppleSignInButton from '../../components/ui/AppleSignInButton';
+import { hapticLight } from '../../lib/haptics';
 
 export default function RegisterScreen() {
   const { register } = useAuth();
@@ -15,6 +18,7 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     setError('');
+    hapticLight();
 
     if (!email || !password || !confirmPassword) {
       setError('Please fill in all fields');
@@ -34,6 +38,7 @@ export default function RegisterScreen() {
     setIsLoading(true);
     try {
       await register(email, password);
+      // AuthContext.register saves tokens and sets user, which triggers auth guard redirect
     } catch (err: any) {
       setError(
         err.response?.data?.message || 'Registration failed. Please try again.'
@@ -49,12 +54,19 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View className="flex-1 justify-center px-8">
-        <Text className="mb-2 text-3xl font-bold text-white">
-          Create account
-        </Text>
-        <Text className="mb-8 text-base text-gray-400">
-          Discover your aesthetic era
-        </Text>
+        {/* Branded Header */}
+        <View className="items-center mb-8">
+          <Ionicons name="sparkles" size={48} color="#ec4899" />
+          <Text className="text-3xl font-bold mt-4" style={{ color: '#ec4899' }}>
+            EraCheck
+          </Text>
+          <Text className="text-lg text-gray-400 mt-2">
+            Create your account
+          </Text>
+          <Text className="text-sm text-gray-500 mt-1 text-center">
+            Join thousands discovering their aesthetic era
+          </Text>
+        </View>
 
         {error ? (
           <View className="mb-4 rounded-lg bg-red-900/30 border border-red-800 p-3">
@@ -103,12 +115,19 @@ export default function RegisterScreen() {
           size="lg"
         />
 
+        {/* Sign in with Apple (Guideline 4.8) */}
+        <AppleSignInButton onError={(msg: string) => setError(msg)} />
+
         <View className="mt-6 flex-row items-center justify-center">
           <Text className="text-gray-400">Already have an account? </Text>
           <Link href="/(auth)/login" asChild>
-            <Text className="font-semibold text-pink-500">Sign In</Text>
+            <Text className="font-semibold" style={{ color: '#ec4899' }}>Sign In</Text>
           </Link>
         </View>
+
+        <Text className="text-gray-500 text-xs text-center mt-4 px-4">
+          By creating an account, you agree to our Terms of Service and Privacy Policy
+        </Text>
       </View>
     </KeyboardAvoidingView>
   );
