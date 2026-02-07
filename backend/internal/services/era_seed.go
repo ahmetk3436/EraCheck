@@ -2,142 +2,261 @@ package services
 
 import (
 	"encoding/json"
+	"log"
 
 	"github.com/ahmetcoskunkizilkaya/EraCheck/backend/internal/models"
 	"gorm.io/gorm"
 )
 
-// EraProfile holds static metadata for an era
+// EraProfile defines the structure for an aesthetic era.
 type EraProfile struct {
-	Key         string
-	Title       string
-	Description string
-	Color       string
-	Emoji       string
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Emoji       string `json:"emoji"`
+	Description string `json:"description"`
+	MusicTaste  string `json:"music_taste"`
+	StyleTraits string `json:"style_traits"`
+	Color       string `json:"color"`
 }
 
-var EraProfiles = map[string]EraProfile{
-	"2016_tumblr":      {Key: "2016_tumblr", Title: "Tumblr Girl", Description: "Aesthetic, deep quotes, indie music", Color: "#2C3E50", Emoji: "🌙"},
-	"2018_vsco":        {Key: "2018_vsco", Title: "VSCO Girl", Description: "Scrunchies, hydroflask, 'and I oop'", Color: "#F8B500", Emoji: "✌️"},
-	"2020_cottagecore": {Key: "2020_cottagecore", Title: "Cottagecore Dreamer", Description: "Nature, baking, Taylor Swift folklore", Color: "#8B7355", Emoji: "🌿"},
-	"2022_clean_girl":  {Key: "2022_clean_girl", Title: "Clean Girl", Description: "Minimalism, slick bun, that girl routine", Color: "#E8D5B7", Emoji: "✨"},
-	"2024_mob_wife":    {Key: "2024_mob_wife", Title: "Mob Wife", Description: "Fur coats, bold jewelry, espresso martinis", Color: "#8B0000", Emoji: "💋"},
-	"2025_demure":      {Key: "2025_demure", Title: "Demure Queen", Description: "Mindful, cutesy, very considerate", Color: "#D4A5A5", Emoji: "🤫"},
+// Eras holds the seed data for all available aesthetic eras as a slice.
+var Eras = []EraProfile{
+	{
+		ID:          "2016_tumblr",
+		Name:        "2016 Tumblr",
+		Emoji:       "🖤",
+		Description: "Dark academia meets indie sleaze. Flannels, band tees, and a healthy dose of existential angst.",
+		MusicTaste:  "Indie rock, The 1975, Arctic Monkeys, Lana Del Rey",
+		StyleTraits: "Doc Martens, flannel shirts, band tees, chokers, dark lipstick",
+		Color:       "#1a1a2e",
+	},
+	{
+		ID:          "2018_vsco",
+		Name:        "2018 VSCO Girl",
+		Emoji:       "🏖️",
+		Description: "Hydro flasks, scrunchies, and saving the turtles. A laid-back, sun-kissed vibe.",
+		MusicTaste:  "Billie Eilish, Lizzo, pop anthems, ukulele covers",
+		StyleTraits: "Oversized tees, scrunchies, shell necklaces, Birkenstocks, puka shells",
+		Color:       "#f4a261",
+	},
+	{
+		ID:          "2020_cottagecore",
+		Name:        "2020 Cottagecore",
+		Emoji:       "🍄",
+		Description: "Escapism to a rural fantasy. Baking bread, picking flowers, and wearing prairie dresses.",
+		MusicTaste:  "Taylor Swift folklore, Phoebe Bridgers, Fleet Foxes, Bon Iver",
+		StyleTraits: "Flowy dresses, prairie skirts, straw hats, linen, dried flowers",
+		Color:       "#6b8e23",
+	},
+	{
+		ID:          "2022_clean_girl",
+		Name:        "2022 Clean Girl",
+		Emoji:       "✨",
+		Description: "Minimalist, expensive, and effortless. Neutral tones and slicked-back hair.",
+		MusicTaste:  "Dua Lipa, SZA, Steve Lacy, Daniel Caesar",
+		StyleTraits: "Slick buns, gold hoops, neutral tones, minimal makeup, claw clips",
+		Color:       "#d4a373",
+	},
+	{
+		ID:          "2024_mob_wife",
+		Name:        "2024 Mob Wife",
+		Emoji:       "🐆",
+		Description: "Oversized coats, luxury brands, and an attitude that says 'don't mess with me'.",
+		MusicTaste:  "Lana Del Rey, Frank Sinatra, Amy Winehouse, classic jazz",
+		StyleTraits: "Fur coats, bold red lips, oversized sunglasses, gold chains, leather",
+		Color:       "#8b0000",
+	},
+	{
+		ID:          "2025_demure",
+		Name:        "2025 Demure",
+		Emoji:       "🎀",
+		Description: "Very mindful, very cutesy. Modest, elegant, and polite.",
+		MusicTaste:  "Sabrina Carpenter, Gracie Abrams, soft pop, acoustic covers",
+		StyleTraits: "Modest cuts, ribbon bows, ballet flats, pastel tones, pearl accessories",
+		Color:       "#f8c8dc",
+	},
 }
 
-var EraKeys = []string{"2016_tumblr", "2018_vsco", "2020_cottagecore", "2022_clean_girl", "2024_mob_wife", "2025_demure"}
+// EraProfiles is a map keyed by era ID for fast lookup from handlers.
+var EraProfiles = func() map[string]EraProfile {
+	m := make(map[string]EraProfile, len(Eras))
+	for _, e := range Eras {
+		m[e.ID] = e
+	}
+	return m
+}()
 
+// GetEraByID retrieves an era profile by its ID.
+func GetEraByID(id string) *EraProfile {
+	if p, ok := EraProfiles[id]; ok {
+		return &p
+	}
+	return nil
+}
+
+// QuizQuestion represents a seed question for the era quiz.
+type QuizQuestion struct {
+	Question string
+	Category string
+	Options  []QuizOption
+}
+
+// QuizOption represents an answer option tied to an era.
+type QuizOption struct {
+	Text string `json:"text"`
+	Era  string `json:"era"`
+}
+
+// quizQuestions holds the seed questions.
+var quizQuestions = []QuizQuestion{
+	{
+		Question: "Pick a weekend activity:",
+		Category: "lifestyle",
+		Options: []QuizOption{
+			{Text: "Thrift shopping for vintage finds", Era: "2016_tumblr"},
+			{Text: "Beach day with friends", Era: "2018_vsco"},
+			{Text: "Baking sourdough and gardening", Era: "2020_cottagecore"},
+			{Text: "Hot yoga and journaling", Era: "2022_clean_girl"},
+			{Text: "Shopping at luxury boutiques", Era: "2024_mob_wife"},
+			{Text: "Reading at a cute café", Era: "2025_demure"},
+		},
+	},
+	{
+		Question: "Your go-to drink order:",
+		Category: "lifestyle",
+		Options: []QuizOption{
+			{Text: "Black coffee, no sugar", Era: "2016_tumblr"},
+			{Text: "Iced matcha with oat milk", Era: "2018_vsco"},
+			{Text: "Chamomile tea with honey", Era: "2020_cottagecore"},
+			{Text: "Green juice or smoothie", Era: "2022_clean_girl"},
+			{Text: "Espresso martini", Era: "2024_mob_wife"},
+			{Text: "Lavender latte", Era: "2025_demure"},
+		},
+	},
+	{
+		Question: "What's your ideal outfit?",
+		Category: "style",
+		Options: []QuizOption{
+			{Text: "Band tee, ripped jeans, and Docs", Era: "2016_tumblr"},
+			{Text: "Oversized hoodie and Birkenstocks", Era: "2018_vsco"},
+			{Text: "Flowy dress and straw hat", Era: "2020_cottagecore"},
+			{Text: "Matching set in neutral tones", Era: "2022_clean_girl"},
+			{Text: "Fur coat and statement sunglasses", Era: "2024_mob_wife"},
+			{Text: "Ribbon top and ballet flats", Era: "2025_demure"},
+		},
+	},
+	{
+		Question: "Your phone wallpaper is:",
+		Category: "aesthetic",
+		Options: []QuizOption{
+			{Text: "A dark, moody landscape", Era: "2016_tumblr"},
+			{Text: "A sunset beach photo", Era: "2018_vsco"},
+			{Text: "Wildflowers or a countryside scene", Era: "2020_cottagecore"},
+			{Text: "A clean, minimal design", Era: "2022_clean_girl"},
+			{Text: "A glamorous cityscape", Era: "2024_mob_wife"},
+			{Text: "A soft pink aesthetic", Era: "2025_demure"},
+		},
+	},
+	{
+		Question: "Pick a social media caption:",
+		Category: "social",
+		Options: []QuizOption{
+			{Text: "\"I'm not weird, I'm a limited edition\"", Era: "2016_tumblr"},
+			{Text: "\"Good vibes only ✌️\"", Era: "2018_vsco"},
+			{Text: "\"Bloom where you are planted 🌿\"", Era: "2020_cottagecore"},
+			{Text: "\"Less is more\"", Era: "2022_clean_girl"},
+			{Text: "\"I don't chase, I attract\"", Era: "2024_mob_wife"},
+			{Text: "\"Very mindful, very demure\"", Era: "2025_demure"},
+		},
+	},
+	{
+		Question: "Your dream vacation:",
+		Category: "lifestyle",
+		Options: []QuizOption{
+			{Text: "A European city known for art and music", Era: "2016_tumblr"},
+			{Text: "A tropical island getaway", Era: "2018_vsco"},
+			{Text: "A cozy countryside cottage", Era: "2020_cottagecore"},
+			{Text: "A luxury wellness retreat", Era: "2022_clean_girl"},
+			{Text: "Milan or Monte Carlo", Era: "2024_mob_wife"},
+			{Text: "A charming small town in France", Era: "2025_demure"},
+		},
+	},
+	{
+		Question: "Pick a movie or show:",
+		Category: "entertainment",
+		Options: []QuizOption{
+			{Text: "Donnie Darko or Skins", Era: "2016_tumblr"},
+			{Text: "Outer Banks or Moana", Era: "2018_vsco"},
+			{Text: "Little Women or Anne with an E", Era: "2020_cottagecore"},
+			{Text: "Succession or Emily in Paris", Era: "2022_clean_girl"},
+			{Text: "The Godfather or Goodfellas", Era: "2024_mob_wife"},
+			{Text: "Bridgerton or Pride and Prejudice", Era: "2025_demure"},
+		},
+	},
+	{
+		Question: "Your home décor style:",
+		Category: "aesthetic",
+		Options: []QuizOption{
+			{Text: "Dark walls, fairy lights, posters", Era: "2016_tumblr"},
+			{Text: "Beachy and relaxed with plants", Era: "2018_vsco"},
+			{Text: "Vintage furniture, dried flowers, lace", Era: "2020_cottagecore"},
+			{Text: "Minimalist, organized, warm neutrals", Era: "2022_clean_girl"},
+			{Text: "Velvet, gold accents, dark wood", Era: "2024_mob_wife"},
+			{Text: "Soft pastels, bows, delicate details", Era: "2025_demure"},
+		},
+	},
+	{
+		Question: "How would your friends describe you?",
+		Category: "social",
+		Options: []QuizOption{
+			{Text: "Deep thinker, a bit mysterious", Era: "2016_tumblr"},
+			{Text: "Fun, laid-back, always down for anything", Era: "2018_vsco"},
+			{Text: "Warm, nurturing, a homebody", Era: "2020_cottagecore"},
+			{Text: "Put-together, focused, ambitious", Era: "2022_clean_girl"},
+			{Text: "Bold, confident, takes no nonsense", Era: "2024_mob_wife"},
+			{Text: "Sweet, elegant, thoughtful", Era: "2025_demure"},
+		},
+	},
+	{
+		Question: "Pick a color palette:",
+		Category: "aesthetic",
+		Options: []QuizOption{
+			{Text: "Black, burgundy, and navy", Era: "2016_tumblr"},
+			{Text: "Teal, coral, and sandy beige", Era: "2018_vsco"},
+			{Text: "Sage green, cream, and lavender", Era: "2020_cottagecore"},
+			{Text: "Beige, white, and caramel", Era: "2022_clean_girl"},
+			{Text: "Red, gold, and black", Era: "2024_mob_wife"},
+			{Text: "Blush pink, ivory, and lilac", Era: "2025_demure"},
+		},
+	},
+}
+
+// SeedQuizQuestions inserts quiz questions into the database if none exist.
 func SeedQuizQuestions(db *gorm.DB) error {
-	// Check if data exists
 	var count int64
 	db.Model(&models.EraQuiz{}).Count(&count)
 	if count > 0 {
+		log.Printf("Quiz questions already seeded (%d found), skipping", count)
 		return nil
 	}
 
-	questions := []struct {
-		Text     string
-		Category string
-		Options  [6]string // Order matches EraKeys order
-	}{
-		{
-			Text:     "What's your go-to music vibe?",
-			Category: "music",
-			Options:  [6]string{"Indie/Alt rock", "Pop & Hype", "Folklore/Acoustic", "Lo-Fi/Chill", "Classic Jazz/Old School", "Soft/Ambient"},
-		},
-		{
-			Text:     "Pick your social media habit:",
-			Category: "social",
-			Options:  [6]string{"Reblogging aesthetic posts", "Posting beach sunsets", "Baking videos", "Minimalist 'Get Ready With Me'", "Glamorous night out dumps", "Mindful morning routines"},
-		},
-		{
-			Text:     "Describe your fashion style:",
-			Category: "style",
-			Options:  [6]string{"Flannel & Doc Martens", "Over-sized tees & scrunchies", "Flowy dresses & prairie skirts", "Neutral tones & gold jewelry", "Leather & oversized fur coats", "Modest, cute, & coordinated"},
-		},
-		{
-			Text:     "Ideal weekend activity?",
-			Category: "lifestyle",
-			Options:  [6]string{"Going to a concert", "Surfing or beach", "Gardening or picnicking", "Pilates & brunch", "Dinner at a fancy spot", "Reading at a cozy cafe"},
-		},
-		{
-			Text:     "Your photo aesthetic is:",
-			Category: "style",
-			Options:  [6]string{"Grainy & vintage", "Bright & saturated", "Soft & nature-focused", "Clean & bright lighting", "High contrast & moody", "Soft focus & pastel"},
-		},
-		{
-			Text:     "Drink of choice?",
-			Category: "lifestyle",
-			Options:  [6]string{"Black coffee", "Kombucha or Iced Tea", "Herbal tea", "Matcha latte with oat milk", "Espresso martini", "Water with lemon"},
-		},
-		{
-			Text:     "Room decor style:",
-			Category: "style",
-			Options:  [6]string{"Fairy lights & band posters", "String lights & polaroids", "Dried flowers & plants", "White everything & candles", "Velvet & dark wood", "Plush & beige aesthetic"},
-		},
-		{
-			Text:     "Favorite movie genre:",
-			Category: "entertainment",
-			Options:  [6]string{"Indie Drama", "Teen Rom-Com", "Fantasy/Period Piece", "Romance", "Crime/Mafia", "Feel-good Animation"},
-		},
-		{
-			Text:     "Texting style:",
-			Category: "social",
-			Options:  [6]string{"Lowercase, no punctuation", "Lots of emojis", "Poetic & long", "Short & sweet", "All caps sometimes", "Very polite & proper"},
-		},
-		{
-			Text:     "Your friend group vibe:",
-			Category: "social",
-			Options:  [6]string{"Deep & emotional", "Loud & fun", "Wholesome & supportive", "Chic & exclusive", "Powerful & bold", "Quiet & kind"},
-		},
-		{
-			Text:     "Workout style?",
-			Category: "lifestyle",
-			Options:  [6]string{"None, I'm too deep", "Walking or Yoga", "Hiking", "Pilates or Barre", "Heavy lifting", "Stretching & Yoga"},
-		},
-		{
-			Text:     "Dream pet:",
-			Category: "lifestyle",
-			Options:  [6]string{"Black cat", "Golden Retriever", "Chicken or Goat", "French Bulldog", "Doberman", "Bunny"},
-		},
-		{
-			Text:     "Vacation destination?",
-			Category: "lifestyle",
-			Options:  [6]string{"London or NYC", "Bali or Tulum", "Cottage in the woods", "Mykonos or Paris", "Las Vegas or Italy", "Quiet cabin in mountains"},
-		},
-		{
-			Text:     "Comfort food:",
-			Category: "lifestyle",
-			Options:  [6]string{"Pizza", "Acai Bowl", "Fresh bread", "Avocado toast", "Steak or Pasta", "Soup or Salad"},
-		},
-		{
-			Text:     "Dream job:",
-			Category: "lifestyle",
-			Options:  [6]string{"Musician or Artist", "Influencer", "Florist or Baker", "Marketing Manager", "Lawyer or Boss", "Teacher or Librarian"},
-		},
-	}
-
-	for _, q := range questions {
-		// Build options JSON
-		var optionsJSON []QuizOption
-		for i, optText := range q.Options {
-			optionsJSON = append(optionsJSON, QuizOption{
-				ID:      i,
-				Text:    optText,
-				EraType: EraKeys[i],
-			})
+	for _, q := range quizQuestions {
+		optionsJSON, err := json.Marshal(q.Options)
+		if err != nil {
+			return err
 		}
-		optionsBytes, _ := json.Marshal(optionsJSON)
 
-		question := models.EraQuiz{
-			Question: q.Text,
+		quiz := models.EraQuiz{
+			Question: q.Question,
 			Category: q.Category,
-			Options:  optionsBytes,
+			Options:  optionsJSON,
 		}
-		if err := db.Create(&question).Error; err != nil {
+
+		if err := db.Create(&quiz).Error; err != nil {
 			return err
 		}
 	}
 
+	log.Printf("Seeded %d quiz questions", len(quizQuestions))
 	return nil
 }
