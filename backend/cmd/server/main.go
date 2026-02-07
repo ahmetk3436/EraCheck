@@ -53,6 +53,7 @@ func main() {
 	moderationHandler := handlers.NewModerationHandler(moderationService)
 	eraHandler := handlers.NewEraHandler(eraService)
 	challengeHandler := handlers.NewChallengeHandler(challengeService, streakService)
+	legalHandler := handlers.NewLegalHandler()
 
 	// Fiber app
 	app := fiber.New(fiber.Config{
@@ -77,7 +78,7 @@ func main() {
 	app.Use("/api/auth", authLimiter)
 
 	// Routes
-	routes.Setup(app, cfg, authHandler, healthHandler, webhookHandler, moderationHandler, eraHandler, challengeHandler)
+	routes.Setup(app, cfg, authHandler, healthHandler, webhookHandler, moderationHandler, eraHandler, challengeHandler, legalHandler)
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
