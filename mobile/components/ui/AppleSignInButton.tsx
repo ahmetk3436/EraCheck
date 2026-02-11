@@ -1,22 +1,41 @@
-import React from 'react';
-import { Platform, View, Text, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { Platform, View, Text, Pressable, ActivityIndicator } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { hapticError } from '../../lib/haptics';
+import { hapticError, hapticLight } from '../../lib/haptics';
 
 interface AppleSignInButtonProps {
   onError?: (error: string) => void;
+  variant?: 'dark' | 'light' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
+  fullWidth?: boolean;
 }
 
-export default function AppleSignInButton({ onError }: AppleSignInButtonProps) {
-  const { loginWithApple } = useAuth();
+const variantStyles = {
+  dark: 'bg-black border-black',
+  light: 'bg-white border-gray-200',
+  outline: 'bg-transparent border-gray-400',
+};
 
-  // Sign in with Apple is only available on iOS
-  if (Platform.OS !== 'ios') {
-    return null;
-  }
+const textStyles = {
+  dark: 'text-white',
+  light: 'text-black',
+  outline: 'text-gray-700',
+};
+
+export default function AppleSignInButton({
+  onError,
+  variant = 'dark',
+  size = 'md',
+  fullWidth = false,
+}: AppleSignInButtonProps) {
+  const { loginWithApple } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAppleSignIn = async () => {
+    hapticLight();
+    setIsLoading(true);
     try {
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -45,26 +64,79 @@ export default function AppleSignInButton({ onError }: AppleSignInButtonProps) {
       }
       hapticError();
       onError?.(err.message || 'Apple Sign In failed');
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // For Android, show a fallback button
+  if (Platform.OS !== 'ios') {
+    return null;
+  }
+
+  const sizeStyles = {
+    sm: 'py-2.5 px-4',
+    md: 'py-3.5 px-5',
+    lg: 'py-4 px-6',
+  };
+
+  const textSizeStyles = {
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg',
   };
 
   return (
     <View className="mt-4">
       <View className="mb-4 flex-row items-center">
-        <View className="h-px flex-1 bg-gray-300" />
-        <Text className="mx-4 text-sm text-gray-500">or</Text>
-        <View className="h-px flex-1 bg-gray-300" />
+        <View className="h-px flex-1 bg-gray-700" />
+        <Text className="mx-4 text-sm text-gray-500 font-medium">or</Text>
+        <View className="h-px flex-1 bg-gray-700" />
       </View>
 
       <Pressable
-        className="flex-row items-center justify-center rounded-xl bg-black py-3.5 active:opacity-80"
+        className={cn(
+          'flex-row items-center justify-center rounded-xl border-2',
+          variantStyles[variant],
+          sizeStyles[size],
+          fullWidth && 'w-full',
+          isLoading && 'opacity-70'
+        )}
         onPress={handleAppleSignIn}
+        disabled={isLoading}
       >
-        <Text className="mr-2 text-lg text-white">{'\uF8FF'}</Text>
-        <Text className="text-base font-semibold text-white">
-          Sign in with Apple
-        </Text>
+        {isLoading ? (
+          <ActivityIndicator
+            size="small"
+            color={variant === 'dark' ? '#ffffff' : '#000000'}
+          />
+        ) : (
+          <>
+            <Text
+              className={cn(
+                'mr-2 text-xl font-semibold',
+                textStyles[variant]
+              )}
+              style={{ fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : undefined }}
+            >
+              {'\uF8FF'}
+            </Text>
+            <Text
+              className={cn(
+                'font-semibold',
+                textSizeStyles[size],
+                textStyles[variant]
+              )}
+            >
+              Sign in with Apple
+            </Text>
+          </>
+        )}
       </Pressable>
     </View>
   );
+}
+
+function cn(...classes: (string | boolean | undefined | null)[]): string {
+  return classes.filter(Boolean).join(' ');
 }
