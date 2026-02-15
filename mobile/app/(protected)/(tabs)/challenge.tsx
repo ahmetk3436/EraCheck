@@ -1,27 +1,46 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
-  ScrollView,
   TextInput,
+  Pressable,
+  ScrollView,
+  Animated,
+  Easing,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { hapticSuccess, hapticError, hapticSelection, hapticWarning } from '../../../lib/haptics';
 import api from '../../../lib/api';
-import { hapticSuccess, hapticError, hapticLight, hapticMedium, hapticSelection } from '../../../lib/haptics';
 import Skeleton from '../../../components/Skeleton';
 import ErrorState from '../../../components/ErrorState';
 
-interface DailyChallenge {
+// ============================================
+// TYPE DEFINITIONS
+// ============================================
+
+interface StreakBadge {
   id: string;
-  prompt: string;
-  challenge_date: string;
-  response: string;
+  name: string;
+  description: string;
+  emoji: string;
+  milestone: number;
+  color: string;
+}
+
+interface ChallengeHistoryItem {
+  id: string;
+  date: string;
+  challenge_date?: string;
   era: string;
+  eraTitle: string;
+  eraColor: string;
+  prompt?: string;
+  response: string;
 }
 
 interface Streak {
@@ -36,60 +55,127 @@ interface Badge {
   unlocked: boolean;
 }
 
+// ============================================
+// CONSTANTS
+// ============================================
+
+const STREAK_BADGES: StreakBadge[] = [
+  {
+    id: 'streak-3',
+    name: 'Getting Started',
+    description: 'Complete 3 daily challenges in a row',
+    emoji: '\u{1F525}',
+    milestone: 3,
+    color: '#f97316',
+  },
+  {
+    id: 'streak-7',
+    name: 'Week Warrior',
+    description: 'Complete 7 daily challenges in a row',
+    emoji: '\u{26A1}',
+    milestone: 7,
+    color: '#eab308',
+  },
+  {
+    id: 'streak-14',
+    name: 'Fortnight Fighter',
+    description: 'Complete 14 daily challenges in a row',
+    emoji: '\u{1F48E}',
+    milestone: 14,
+    color: '#06b6d4',
+  },
+  {
+    id: 'streak-21',
+    name: 'Habit Hero',
+    description: 'Complete 21 daily challenges in a row',
+    emoji: '\u{1F3C6}',
+    milestone: 21,
+    color: '#8b5cf6',
+  },
+  {
+    id: 'streak-30',
+    name: 'Monthly Master',
+    description: 'Complete 30 daily challenges in a row',
+    emoji: '\u{1F451}',
+    milestone: 30,
+    color: '#ec4899',
+  },
+  {
+    id: 'streak-50',
+    name: 'Legendary Streak',
+    description: 'Complete 50 daily challenges in a row',
+    emoji: '\u{1F31F}',
+    milestone: 50,
+    color: '#f59e0b',
+  },
+];
+
+const ERA_PROFILES: Record<string, { title: string; color: string }> = {
+  'victorian': { title: 'Victorian Era', color: '#8b5a2b' },
+  'roaring-twenties': { title: 'Roaring Twenties', color: '#ffd700' },
+  'renaissance': { title: 'Renaissance', color: '#8b4513' },
+  'medieval': { title: 'Medieval Times', color: '#4a5568' },
+  'ancient-rome': { title: 'Ancient Rome', color: '#9c4221' },
+  'ancient-egypt': { title: 'Ancient Egypt', color: '#d69e2e' },
+  'futuristic': { title: 'Futuristic', color: '#00d4ff' },
+  'prehistoric': { title: 'Prehistoric', color: '#553c9a' },
+};
+
+// ============================================
+// SKELETON
+// ============================================
+
 const ChallengeSkeleton: React.FC = () => (
   <View className="p-6">
-    {/* Header skeleton */}
     <View className="mb-6">
       <Skeleton className="w-48 h-8 mb-2" />
       <Skeleton className="w-40 h-5" />
     </View>
-
-    {/* Streak card skeleton */}
     <Skeleton className="w-full h-20 rounded-2xl mb-6" />
-
-    {/* Badges skeleton */}
-    <View className="flex-row mb-6">
-      {[1, 2, 3, 4].map((i) => (
-        <View key={i} className="items-center mr-4">
-          <Skeleton className="w-14 h-14 rounded-full mb-1" />
-          <Skeleton className="w-10 h-3" />
+    <View className="flex-row flex-wrap gap-3 mb-6">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <View key={i} className="w-[48%]">
+          <Skeleton className="w-full h-28 rounded-2xl" />
         </View>
       ))}
     </View>
-
-    {/* Challenge card skeleton */}
-    <View className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
-      <Skeleton className="w-full h-6 mb-4" />
-      <Skeleton className="w-3/4 h-6 mb-2" />
-      <Skeleton className="w-1/2 h-6" />
-    </View>
-
-    {/* Response input skeleton */}
-    <Skeleton className="w-full h-32 rounded-xl mb-4" />
-
-    {/* Submit button skeleton */}
-    <Skeleton className="w-full h-14 rounded-xl" />
+    <Skeleton className="w-full h-40 rounded-2xl mb-4" />
+    <Skeleton className="w-full h-14 rounded-2xl" />
   </View>
 );
 
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
 export default function ChallengeScreen() {
-  const [challenge, setChallenge] = useState<DailyChallenge | null>(null);
-  const [streak, setStreak] = useState<Streak | null>(null);
+  // State
+  const [challenge, setChallenge] = useState<any>(null);
+  const [streakData, setStreakData] = useState<Streak | null>(null);
   const [badges, setBadges] = useState<Badge[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
-  const [response, setResponse] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [history, setHistory] = useState<ChallengeHistoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [response, setResponse] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [countdown, setCountdown] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [challengeCompleted, setChallengeCompleted] = useState(false);
+  const [showMilestone, setShowMilestone] = useState(false);
+  const [currentMilestone, setCurrentMilestone] = useState<StreakBadge | null>(null);
+  const [celebratedMilestones, setCelebratedMilestones] = useState<string[]>([]);
+  const [expandedHistoryIds, setExpandedHistoryIds] = useState<string[]>([]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Animation refs
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  const loadData = useCallback(async () => {
+  // ============================================
+  // FUNCTIONS
+  // ============================================
+
+  const fetchChallengeData = useCallback(async (): Promise<void> => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       setError(null);
 
       const [challengeRes, streakRes] = await Promise.all([
@@ -97,15 +183,17 @@ export default function ChallengeScreen() {
         api.get('/challenges/streak'),
       ]);
 
-      // Extract from envelopes
       const challengeData = challengeRes.data.challenge || challengeRes.data;
       setChallenge(challengeData);
 
-      const streakData = streakRes.data.streak || streakRes.data;
-      setStreak(streakData);
+      const streak = streakRes.data.streak || streakRes.data;
+      setStreakData(streak);
       setBadges(streakRes.data.badges || []);
 
-      if (challengeData.response && challengeData.response !== '') {
+      const hasResponded = challengeData.response && challengeData.response !== '';
+      setChallengeCompleted(hasResponded);
+
+      if (hasResponded) {
         setResponse(challengeData.response);
       }
 
@@ -117,72 +205,204 @@ export default function ChallengeScreen() {
         // History fetch is optional
       }
 
-      // Engagement cue when challenge loads
-      hapticMedium();
-    } catch (err: any) {
-      console.error('Failed to load data:', err);
+      // Load celebrated milestones from AsyncStorage
+      const stored = await AsyncStorage.getItem('celebratedMilestones');
+      if (stored) {
+        setCelebratedMilestones(JSON.parse(stored));
+      }
+    } catch (err) {
+      console.error('Failed to fetch challenge:', err);
       hapticError();
       setError("Failed to load today's challenge");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, []);
 
-  const handleRetry = () => {
-    hapticSelection();
-    loadData();
-  };
+  const updateCountdown = useCallback((): void => {
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const remaining = midnight.getTime() - now.getTime();
 
-  const handleSubmit = async () => {
-    if (!challenge || !response.trim()) {
-      hapticError();
-      setSubmissionError('Please enter a response');
+    if (remaining <= 0) {
+      setCountdown({ hours: 0, minutes: 0, seconds: 0 });
+      fetchChallengeData();
       return;
     }
 
-    setSubmitting(true);
-    setSubmissionError(null);
-    // Store previous badge count for comparison
-    const previousUnlockedCount = badges.filter(b => b.unlocked).length;
+    const hours = Math.floor(remaining / (1000 * 60 * 60));
+    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+    setCountdown({ hours, minutes, seconds });
+  }, [fetchChallengeData]);
+
+  const formatCountdown = (time: { hours: number; minutes: number; seconds: number }): string => {
+    const pad = (n: number): string => n.toString().padStart(2, '0');
+    return `${pad(time.hours)}:${pad(time.minutes)}:${pad(time.seconds)}`;
+  };
+
+  const handleSubmit = async (): Promise<void> => {
+    if (!response.trim()) {
+      hapticWarning();
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
+      hapticSelection();
+
       await api.post('/challenges/submit', {
         response: response.trim(),
       });
 
       hapticSuccess();
-      setChallenge({ ...challenge, response: response.trim() });
+      setChallengeCompleted(true);
 
-      // Reload data to get updated streak/badges
+      // Reload streak data to get updated streak count
       const streakRes = await api.get('/challenges/streak');
-      const newBadges = streakRes.data.badges || [];
-      const newUnlockedCount = newBadges.filter((b: Badge) => b.unlocked).length;
+      const newStreak = streakRes.data.streak || streakRes.data;
+      const newStreakCount = newStreak.current_streak || 0;
+      setStreakData(newStreak);
+      setBadges(streakRes.data.badges || []);
 
-      // Check for new badge unlock
-      if (newUnlockedCount > previousUnlockedCount) {
-        setTimeout(() => {
-          hapticSuccess();
-        }, 300);
+      // Check for new milestone
+      const milestone = STREAK_BADGES.find(
+        (b) => b.milestone === newStreakCount && !celebratedMilestones.includes(b.id)
+      );
+
+      if (milestone) {
+        setCurrentMilestone(milestone);
+        setShowMilestone(true);
+
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }).start();
+
+        const updated = [...celebratedMilestones, milestone.id];
+        setCelebratedMilestones(updated);
+        await AsyncStorage.setItem('celebratedMilestones', JSON.stringify(updated));
       }
 
-      loadData();
-    } catch (err: any) {
-      console.error('Failed to submit response:', err);
+      // Refresh full data
+      fetchChallengeData();
+    } catch (err) {
+      console.error('Failed to submit:', err);
       hapticError();
-      setSubmissionError(err.response?.data?.message || 'Failed to submit response. Please try again.');
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
-  const hasResponded = challenge ? (challenge.response && challenge.response !== '') : false;
+  const dismissMilestone = (): void => {
+    hapticSelection();
+    Animated.timing(scaleAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+      easing: Easing.ease,
+    }).start(() => {
+      setShowMilestone(false);
+      setCurrentMilestone(null);
+    });
+  };
 
-  if (loading) {
+  const toggleHistoryExpand = (id: string): void => {
+    hapticSelection();
+    setExpandedHistoryIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const getCharCounterColor = (length: number): string => {
+    const percentage = (length / 500) * 100;
+    if (percentage >= 95) return 'text-red-400';
+    if (percentage >= 80) return 'text-orange-400';
+    return 'text-gray-500';
+  };
+
+  const isBadgeUnlocked = (badge: StreakBadge, streak: number): boolean => {
+    return streak >= badge.milestone;
+  };
+
+  const getBadgeProgress = (badge: StreakBadge, streak: number): { current: number; target: number; percentage: number } => {
+    const current = Math.min(streak, badge.milestone);
+    const target = badge.milestone;
+    const percentage = Math.min((streak / badge.milestone) * 100, 100);
+    return { current, target, percentage };
+  };
+
+  const getNextBadge = (streak: number): StreakBadge | undefined => {
+    return STREAK_BADGES.find((b) => streak < b.milestone);
+  };
+
+  const getEraInfo = (era: string): { title: string; color: string } => {
+    return ERA_PROFILES[era] || { title: era, color: '#6b7280' };
+  };
+
+  const handleRetry = () => {
+    hapticSelection();
+    fetchChallengeData();
+  };
+
+  // ============================================
+  // EFFECTS
+  // ============================================
+
+  useEffect(() => {
+    fetchChallengeData();
+  }, [fetchChallengeData]);
+
+  useEffect(() => {
+    if (!challengeCompleted) return;
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [challengeCompleted, updateCountdown]);
+
+  useEffect(() => {
+    const streak = streakData?.current_streak || 0;
+    if (streak < 50) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1000,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.ease),
+          }),
+        ])
+      ).start();
+    }
+  }, [streakData, pulseAnim]);
+
+  // ============================================
+  // LOADING STATE
+  // ============================================
+
+  if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
         <ChallengeSkeleton />
       </SafeAreaView>
     );
   }
+
+  // ============================================
+  // ERROR STATE
+  // ============================================
 
   if (error) {
     return (
@@ -198,201 +418,273 @@ export default function ChallengeScreen() {
     );
   }
 
+  // ============================================
+  // RENDER
+  // ============================================
+
+  const streak = streakData?.current_streak || 0;
+  const nextBadge = getNextBadge(streak);
+
   return (
     <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <ScrollView
+        className="flex-1 px-6 pt-4"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView className="flex-1" contentContainerClassName="p-6">
-          {/* Header */}
-          <View className="mb-6">
-            <Text className="text-3xl font-bold text-white mb-2">
-              Daily Challenge
-            </Text>
-            <Text className="text-gray-400">
-              {new Date().toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </Text>
+        {/* Header Section */}
+        <View className="flex-row items-center justify-between mb-2">
+          <Text className="text-2xl font-bold text-white">Daily Challenge</Text>
+          <View className="bg-pink-500/20 px-3 py-1 rounded-full flex-row items-center gap-1">
+            <Ionicons name="flame" size={16} color="#ec4899" />
+            <Text className="text-pink-400 font-semibold">{streak} day streak</Text>
           </View>
+        </View>
+        <Text className="text-gray-400 text-sm mb-6">
+          Complete daily challenges to earn badges and discover your era
+        </Text>
 
-          {/* Streak Card */}
-          {streak && (
-            <View
-              className="rounded-2xl p-5 mb-6 flex-row items-center shadow-lg"
-              style={{ backgroundColor: '#f97316' }}
+        {/* Countdown Timer Section */}
+        {challengeCompleted && (
+          <View className="bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-6">
+            <View className="flex-row items-center justify-center gap-2 mb-2">
+              <Ionicons name="timer" size={20} color="#f472b6" />
+              <Text className="text-gray-400 text-sm">Next challenge in</Text>
+            </View>
+            <Text className="text-2xl font-bold text-pink-400 text-center tracking-wider"
+              style={{ fontVariant: ['tabular-nums'] }}
             >
-              <Ionicons name="flame" size={32} color="#fff" />
-              <View className="ml-3 flex-1">
-                <Text className="text-white text-2xl font-bold">
-                  {streak.current_streak} Day Streak
-                </Text>
-                <Text style={{ color: 'rgba(255,255,255,0.9)' }} className="text-sm">
-                  Longest: {streak.longest_streak} days
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* Badges */}
-          {badges.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
-              {badges.map((badge, i) => (
-                <View
-                  key={i}
-                  className="items-center mr-4"
-                  style={{ opacity: badge.unlocked ? 1 : 0.35 }}
-                >
-                  <View
-                    className="w-14 h-14 rounded-full items-center justify-center"
-                    style={{ backgroundColor: badge.unlocked ? '#1e293b' : '#111827' }}
-                  >
-                    <Text style={{ fontSize: 24 }}>{badge.emoji}</Text>
-                  </View>
-                  <Text className="text-xs text-gray-300 mt-1 font-medium">{badge.name}</Text>
-                  <Text className="text-xs text-gray-500">{badge.required}d</Text>
-                </View>
-              ))}
-            </ScrollView>
-          )}
-
-          {/* Challenge Card or Empty State */}
-          {challenge ? (
-            <>
-              <View className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
-                <View className="flex-row items-center mb-3">
-                  <Ionicons name="bulb" size={24} color="#ec4899" />
-                  <Text className="text-white text-lg font-bold ml-2">
-                    Today's Challenge
-                  </Text>
-                </View>
-                <Text className="text-gray-300 text-base leading-6">
-                  {challenge.prompt}
-                </Text>
-              </View>
-
-              {/* Response Input */}
-              <View className="mb-6">
-                <Text className="text-white font-semibold text-lg mb-3">
-                  Your Response
-                </Text>
-                <TextInput
-                  className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-white text-base"
-                  style={{ minHeight: 128 }}
-                  placeholder="Share your thoughts..."
-                  placeholderTextColor="#6b7280"
-                  multiline
-                  numberOfLines={6}
-                  textAlignVertical="top"
-                  value={response}
-                  onChangeText={(text) => {
-                    setResponse(text);
-                    if (submissionError) setSubmissionError(null);
-                  }}
-                  editable={!hasResponded}
-                  maxLength={500}
-                />
-                <Text className="text-right text-xs text-gray-400 mt-1">
-                  {response.length}/500
-                </Text>
-
-                {hasResponded && (
-                  <View className="mt-3 flex-row items-center">
-                    <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-                    <Text className="text-green-500 font-medium ml-2">
-                      Response submitted!
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Submit Button */}
-              {!hasResponded && (
-                <TouchableOpacity
-                  onPress={handleSubmit}
-                  disabled={submitting || !response.trim()}
-                  className="rounded-xl py-4 items-center"
-                  style={{
-                    backgroundColor: submitting || !response.trim() ? '#374151' : '#ec4899',
-                  }}
-                >
-                  {submitting ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text className="text-white font-semibold text-lg">
-                      Submit Response
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              )}
-
-              {/* Submission Error */}
-              {submissionError && (
-                <View className="flex-row items-center justify-center mt-4">
-                  <Ionicons name="close-circle" size={16} color="#ef4444" />
-                  <Text className="text-red-400 text-sm ml-2">{submissionError}</Text>
-                </View>
-              )}
-            </>
-          ) : (
-            <View className="items-center justify-center py-12">
-              <Ionicons name="calendar-outline" size={64} color="#4b5563" />
-              <Text className="text-gray-400 text-lg font-semibold mt-4">
-                No Challenge Today
-              </Text>
-              <Text className="text-gray-500 text-center mt-2">
-                Check back tomorrow!
-              </Text>
-            </View>
-          )}
-
-          {/* Challenge History */}
-          {history.length > 0 && (
-            <View className="mt-6">
-              <Text className="text-lg font-bold text-white mb-3">
-                Previous Challenges
-              </Text>
-              {history.map((h: any) => (
-                <View
-                  key={h.id}
-                  className="rounded-xl p-4 mb-3"
-                  style={{ backgroundColor: '#111827' }}
-                >
-                  <Text className="text-sm text-gray-500">
-                    {new Date(h.challenge_date).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </Text>
-                  <Text className="text-gray-300 font-medium mt-1" numberOfLines={1}>
-                    {h.prompt}
-                  </Text>
-                  {h.era && (
-                    <Text className="text-xs text-gray-500 mt-1">
-                      Era: {h.era}
-                    </Text>
-                  )}
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Info */}
-          <View className="mt-6 bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <Text className="text-pink-400 font-semibold mb-1">
-              Daily Challenge Streak
-            </Text>
-            <Text className="text-gray-400 text-sm">
-              Complete daily challenges to maintain your streak and unlock
-              exclusive badges!
+              {formatCountdown(countdown)}
             </Text>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        )}
+
+        {/* Challenge Prompt Card */}
+        <LinearGradient
+          colors={['rgba(88,28,135,0.5)', 'rgba(131,24,67,0.5)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="rounded-3xl p-6 mb-6 border border-purple-500/20"
+        >
+          <View className="flex-row items-center gap-2 mb-3">
+            <Ionicons name="help-circle" size={20} color="#a855f7" />
+            <Text className="text-purple-300 font-semibold">Today's Prompt</Text>
+          </View>
+          <Text className="text-white text-lg leading-7">
+            {challenge?.prompt || 'What would your ideal day look like in your favorite historical era?'}
+          </Text>
+        </LinearGradient>
+
+        {/* Response Input Section */}
+        {!challengeCompleted && (
+          <View className="mb-6">
+            <Text className="text-gray-300 font-semibold mb-2">Your Response</Text>
+            <TextInput
+              className="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-white text-base"
+              style={{ minHeight: 120 }}
+              placeholder="Share your thoughts..."
+              placeholderTextColor="#6b7280"
+              multiline
+              maxLength={500}
+              value={response}
+              onChangeText={setResponse}
+              textAlignVertical="top"
+            />
+            <View className="flex-row justify-between items-center mt-2">
+              <Text className={`${getCharCounterColor(response.length)} text-xs`}>
+                {response.length}/500
+              </Text>
+            </View>
+
+            <Pressable
+              onPress={handleSubmit}
+              disabled={isSubmitting || !response.trim()}
+              className="mt-4"
+            >
+              <LinearGradient
+                colors={response.trim() ? ['#ec4899', '#a855f7'] : ['#374151', '#374151']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="rounded-2xl py-4"
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text className="text-white font-bold text-center text-lg">
+                    Submit Response
+                  </Text>
+                )}
+              </LinearGradient>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Completed Confirmation */}
+        {challengeCompleted && (
+          <View className="flex-row items-center justify-center mb-6 bg-green-500/10 rounded-2xl p-3">
+            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+            <Text className="text-green-500 font-medium ml-2">
+              Response submitted!
+            </Text>
+          </View>
+        )}
+
+        {/* Badges Section */}
+        <Text className="text-lg font-bold text-white mb-4">Your Badges</Text>
+        <View className="flex-row flex-wrap gap-3 mb-6">
+          {STREAK_BADGES.map((badge) => {
+            const unlocked = isBadgeUnlocked(badge, streak);
+            const progress = getBadgeProgress(badge, streak);
+            const isNext = nextBadge?.id === badge.id;
+
+            return (
+              <Animated.View
+                key={badge.id}
+                style={isNext ? { transform: [{ scale: pulseAnim }] } : undefined}
+                className={`w-[48%] bg-gray-900 rounded-2xl p-4 border ${
+                  unlocked ? 'border-purple-500/30' : isNext ? 'border-pink-500/50' : 'border-gray-800'
+                } ${!unlocked ? 'opacity-50' : ''}`}
+              >
+                <View className="flex-row items-center gap-3">
+                  <View className="relative">
+                    <Text className="text-4xl" style={unlocked ? {} : { opacity: 0.35 }}>
+                      {badge.emoji}
+                    </Text>
+                    {!unlocked && (
+                      <View className="absolute inset-0 items-center justify-center">
+                        <Ionicons name="lock-closed" size={14} color="#9ca3af" />
+                      </View>
+                    )}
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-white font-semibold text-sm">{badge.name}</Text>
+                    <Text className="text-gray-400 text-xs" numberOfLines={1}>
+                      {badge.description}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Progress Bar */}
+                <View className="bg-gray-800 rounded-full h-2 mt-3 overflow-hidden">
+                  <View
+                    className="rounded-full h-2"
+                    style={{
+                      width: `${progress.percentage}%`,
+                      backgroundColor: badge.color,
+                    }}
+                  />
+                </View>
+                <Text className="text-gray-500 text-xs mt-1">
+                  {progress.current}/{progress.target} days
+                </Text>
+              </Animated.View>
+            );
+          })}
+        </View>
+
+        {/* Challenge History Section */}
+        {history.length > 0 && (
+          <>
+            <Text className="text-lg font-bold text-white mb-4">Challenge History</Text>
+            {history.map((item) => {
+              const eraInfo = getEraInfo(item.era || '');
+              const isExpanded = expandedHistoryIds.includes(item.id);
+              const displayResponse = item.response || item.prompt || '';
+              const shouldTruncate = displayResponse.length > 100;
+              const displayText = !isExpanded && shouldTruncate
+                ? `${displayResponse.substring(0, 100)}...`
+                : displayResponse;
+              const dateStr = item.date || item.challenge_date || '';
+              const formattedDate = dateStr
+                ? new Date(dateStr).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
+                : '';
+
+              return (
+                <Pressable
+                  key={item.id}
+                  onPress={() => shouldTruncate && toggleHistoryExpand(item.id)}
+                  className="bg-gray-900 rounded-2xl p-4 mb-3 border border-gray-800"
+                >
+                  <View className="flex-row items-center gap-3 mb-2">
+                    <View
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: eraInfo.color }}
+                    />
+                    <View className="flex-1">
+                      <Text className="text-white font-semibold">{eraInfo.title}</Text>
+                      <Text className="text-gray-500 text-xs">{formattedDate}</Text>
+                    </View>
+                    {shouldTruncate && (
+                      <Ionicons
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={16}
+                        color="#9ca3af"
+                      />
+                    )}
+                  </View>
+                  <Text className="text-gray-300 text-sm leading-5">{displayText}</Text>
+                </Pressable>
+              );
+            })}
+          </>
+        )}
+
+        {/* Bottom Spacing */}
+        <View className="h-6" />
+      </ScrollView>
+
+      {/* Milestone Celebration Modal */}
+      <Modal
+        visible={showMilestone}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <View className="flex-1 bg-black/70 items-center justify-center p-6">
+          <Animated.View
+            style={{
+              transform: [{ scale: scaleAnim }],
+              opacity: scaleAnim,
+            }}
+            className="w-full max-w-sm"
+          >
+            <LinearGradient
+              colors={['#831843', '#581c87', '#1e1b4b']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="rounded-3xl p-1"
+            >
+              <View className="bg-gray-900 rounded-3xl p-8 items-center">
+                <Text className="text-6xl mb-4">{currentMilestone?.emoji}</Text>
+                <Text className="text-2xl font-bold text-white mb-2 text-center">
+                  Achievement Unlocked!
+                </Text>
+                <Text className="text-pink-400 font-semibold text-lg mb-2">
+                  {currentMilestone?.name}
+                </Text>
+                <Text className="text-gray-400 text-center mb-6">
+                  {currentMilestone?.description}
+                </Text>
+                <Pressable onPress={dismissMilestone} className="w-full">
+                  <LinearGradient
+                    colors={['#ec4899', '#a855f7']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    className="rounded-2xl px-8 py-4"
+                  >
+                    <Text className="text-white font-bold text-center text-lg">
+                      Continue
+                    </Text>
+                  </LinearGradient>
+                </Pressable>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
