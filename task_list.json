@@ -76,25 +76,25 @@
       "id": "enhance_007",
       "title": "Add Haptic Feedback to All Missing Interactions",
       "description": "While most buttons have haptics, several interactions are missing haptic feedback per Apple Guideline 4.2 and the 2025-2026 Haptic-Visual Sync trend.\n\n**Files to modify:**\n\n1. `mobile/app/(protected)/(tabs)/challenge.tsx`\n   - Add `hapticSuccess()` after successful challenge submission (currently no haptic on submit success)\n   - Add `hapticError()` on submission failure\n   - Add `hapticSuccess()` when a new badge is unlocked (compare badges before/after streak update)\n   - Add `hapticMedium()` when daily challenge loads for the first time (engagement cue)\n\n2. `mobile/app/(protected)/(tabs)/history.tsx`\n   - Add `hapticLight()` on result item press (navigating to detail)\n   - Add `hapticError()` on pull-to-refresh failure\n\n3. `mobile/app/(protected)/results/[id].tsx`\n   - Add `hapticSuccess()` when share completes successfully\n   - Add `hapticError()` when share or result load fails\n   - Add `hapticMedium()` on 'Retake Quiz' button press (stronger feedback for major action)\n\n4. `mobile/app/(protected)/quiz.tsx`\n   - Add `hapticSuccess()` on final question answer (quiz complete moment)\n   - Add `hapticMedium()` on 'Get Results' button press\n   - Add `hapticWarning()` on quiz exit/back confirmation\n\n5. `mobile/app/(protected)/paywall.tsx`\n   - Add `hapticSuccess()` after successful purchase\n   - Add `hapticError()` on purchase failure\n   - Add `hapticLight()` on package selection\n\n6. `mobile/app/onboarding.tsx`\n   - Add `hapticLight()` on page scroll snap (when page index changes)\n   - Add `hapticMedium()` on 'Try Free' CTA button\n\n**Import pattern:** `import { hapticSuccess, hapticError, hapticLight, hapticMedium, hapticWarning } from '../../lib/haptics';` (adjust path depth per file)\n\n**Test:** `cd mobile \u0026\u0026 npx tsc --noEmit`",
+      "status": "completed",
+      "priority": 7,
+      "depends_on": [],
+      "test_command": "cd mobile \u0026\u0026 npx tsc --noEmit",
+      "auto_commit": true,
+      "created_at": "",
+      "updated_at": "2026-02-15T02:54:58Z"
+    },
+    {
+      "id": "enhance_008",
+      "title": "Implement Share Prompt After Every Quiz Result",
+      "description": "After completing a quiz, the results screen has a share button but there's no proactive share prompt. Per engagement best practices and the Viral Share Sheets trend, users should be prompted to share their result immediately.\n\n**File 1:** `mobile/app/(protected)/results/[id].tsx`\n- Add auto-show share prompt 2 seconds after result loads:\n  - State: `showSharePrompt` (boolean, default false)\n  - useEffect: `setTimeout(() =\u003e setShowSharePrompt(true), 2000)` on mount\n  - Share prompt UI: a bottom-anchored card (absolute bottom-6 left-4 right-4) with:\n    - LinearGradient background (pink #ec4899 to purple #a855f7)\n    - Row layout: Ionicons 'share-social' (24px white), 'Share your era with friends!' text-white font-semibold, 'Share' Button (white bg, pink text, small)\n    - Dismiss X button (top-right corner of card)\n    - `hapticLight()` when prompt appears\n  - On share press: call existing share function, dismiss prompt\n  - On dismiss: set `showSharePrompt(false)`, save dismissal to AsyncStorage so it only shows once per session\n\n**File 2:** `mobile/components/ui/ShareableResult.tsx`\n- The ShareableResult component already generates a 1080x1920 shareable image card\n- Ensure the share sheet includes:\n  - Image from view-shot capture\n  - Message: 'I got {eraTitle}! Find your aesthetic era on EraCheck ✨'\n  - URL placeholder for app store link (use `https://eracheck.app` as placeholder)\n- Add share count display after sharing: 'Shared {n} times' badge on the result card\n\n**File 3:** `mobile/app/(protected)/(tabs)/index.tsx` (Quiz Home)\n- After quiz completion redirect, show a brief celebration animation:\n  - Confetti-style effect using Reanimated (3-4 colored circles animating upward with fade)\n  - Duration: 1.5s, auto-dismiss\n  - `hapticSuccess()` on celebration start\n\n**Test:** `cd mobile \u0026\u0026 npx tsc --noEmit`",
       "status": "in_progress",
       "priority": 7,
       "depends_on": [],
       "test_command": "cd mobile \u0026\u0026 npx tsc --noEmit",
       "auto_commit": true,
       "created_at": "",
-      "updated_at": "2026-02-15T02:48:14Z"
-    },
-    {
-      "id": "enhance_008",
-      "title": "Implement Share Prompt After Every Quiz Result",
-      "description": "After completing a quiz, the results screen has a share button but there's no proactive share prompt. Per engagement best practices and the Viral Share Sheets trend, users should be prompted to share their result immediately.\n\n**File 1:** `mobile/app/(protected)/results/[id].tsx`\n- Add auto-show share prompt 2 seconds after result loads:\n  - State: `showSharePrompt` (boolean, default false)\n  - useEffect: `setTimeout(() =\u003e setShowSharePrompt(true), 2000)` on mount\n  - Share prompt UI: a bottom-anchored card (absolute bottom-6 left-4 right-4) with:\n    - LinearGradient background (pink #ec4899 to purple #a855f7)\n    - Row layout: Ionicons 'share-social' (24px white), 'Share your era with friends!' text-white font-semibold, 'Share' Button (white bg, pink text, small)\n    - Dismiss X button (top-right corner of card)\n    - `hapticLight()` when prompt appears\n  - On share press: call existing share function, dismiss prompt\n  - On dismiss: set `showSharePrompt(false)`, save dismissal to AsyncStorage so it only shows once per session\n\n**File 2:** `mobile/components/ui/ShareableResult.tsx`\n- The ShareableResult component already generates a 1080x1920 shareable image card\n- Ensure the share sheet includes:\n  - Image from view-shot capture\n  - Message: 'I got {eraTitle}! Find your aesthetic era on EraCheck ✨'\n  - URL placeholder for app store link (use `https://eracheck.app` as placeholder)\n- Add share count display after sharing: 'Shared {n} times' badge on the result card\n\n**File 3:** `mobile/app/(protected)/(tabs)/index.tsx` (Quiz Home)\n- After quiz completion redirect, show a brief celebration animation:\n  - Confetti-style effect using Reanimated (3-4 colored circles animating upward with fade)\n  - Duration: 1.5s, auto-dismiss\n  - `hapticSuccess()` on celebration start\n\n**Test:** `cd mobile \u0026\u0026 npx tsc --noEmit`",
-      "status": "pending",
-      "priority": 7,
-      "depends_on": [],
-      "test_command": "cd mobile \u0026\u0026 npx tsc --noEmit",
-      "auto_commit": true,
-      "created_at": "",
-      "updated_at": ""
+      "updated_at": "2026-02-15T02:54:58Z"
     },
     {
       "id": "enhance_009",

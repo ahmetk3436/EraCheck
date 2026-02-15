@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../lib/api';
 import { hapticSuccess, hapticError, hapticLight, hapticMedium, hapticWarning, hapticSelection } from '../../lib/haptics';
 import { useAuth } from '../../contexts/AuthContext';
@@ -174,6 +175,9 @@ export default function QuizScreen() {
       // Extract result ID from envelope: {error, data: {result, profile}}
       const resultData = data.data || data;
       const resultId = resultData.result?.id || resultData.id;
+
+      // Flag for celebration animation on home screen
+      await AsyncStorage.setItem('quiz_just_completed', 'true');
       router.replace(`/(protected)/results/${resultId}`);
     } catch (err: any) {
       console.error('Failed to submit quiz:', err);

@@ -11,6 +11,8 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../../lib/api';
 import { hapticSuccess, hapticError, hapticLight, hapticMedium, hapticSelection } from '../../../lib/haptics';
 import Skeleton from '../../../components/Skeleton';
@@ -108,12 +110,36 @@ export default function ResultsScreen() {
   const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [showSharePrompt, setShowSharePrompt] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadResult();
     }
   }, [id]);
+
+  // Auto-show share prompt 2 seconds after result loads
+  useEffect(() => {
+    if (!loading && result && !showSharePrompt) {
+      const checkAndShow = async () => {
+        const dismissed = await AsyncStorage.getItem('share_prompt_dismissed_session');
+        if (!dismissed) {
+          const timer = setTimeout(() => {
+            setShowSharePrompt(true);
+            hapticLight();
+          }, 2000);
+          return () => clearTimeout(timer);
+        }
+      };
+      checkAndShow();
+    }
+  }, [loading, result]);
+
+  const handleDismissSharePrompt = async () => {
+    hapticSelection();
+    setShowSharePrompt(false);
+    await AsyncStorage.setItem('share_prompt_dismissed_session', 'true');
+  };
 
   const loadResult = useCallback(async () => {
     try {
@@ -157,13 +183,14 @@ export default function ResultsScreen() {
     try {
       await api.post(`/era/results/${id}/share`);
 
-      const message = `I just discovered my aesthetic era! I'm ${result.era_emoji} ${result.era_title}! Take the quiz and find yours!`;
+      const message = `I got ${result.era_emoji} ${result.era_title}! Find your aesthetic era on EraCheck ✨`;
 
       await Share.share({
         message,
       });
 
       hapticSuccess();
+      setShowSharePrompt(false);
       loadResult();
     } catch (err: any) {
       console.error('Failed to share:', err);
@@ -258,11 +285,14 @@ export default function ResultsScreen() {
           </Text>
         </View>
 
-        {/* Share Prompt */}
-        <View className="mx-6 mt-4 flex-row items-center justify-center">
-          <Ionicons name="heart" size={16} color="#ef4444" />
-          <Text className="text-gray-500 text-sm ml-2">Share your era with friends!</Text>
-        </View>
+        {/* Share Count */}
+        {result.share_count > 0 && (
+          <View className="self-center mt-4 rounded-full py-2 px-4" style={{ backgroundColor: 'rgba(168,85,247,0.15)' }}>
+            <Text className="text-purple-400 font-medium text-sm">
+              Shared {result.share_count} {result.share_count === 1 ? 'time' : 'times'}
+            </Text>
+          </View>
+        )}
 
         {/* Description */}
         <View className="mx-6 mt-6">
@@ -379,6 +409,44 @@ export default function ResultsScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Auto-Show Share Prompt */}
+      {showSharePrompt && (
+        <View style={{ position: 'absolute', bottom: 24, left: 16, right: 16 }}>
+          <LinearGradient
+            colors={['#ec4899', '#a855f7']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ borderRadius: 16, padding: 16 }}
+          >
+            {/* Dismiss Button */}
+            <Pressable
+              onPress={handleDismissSharePrompt}
+              style={{ position: 'absolute', top: 8, right: 8, width: 24, height: 24, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}
+            >
+              <Ionicons name="close" size={20} color="#fff" />
+            </Pressable>
+
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1 mr-3">
+                <Ionicons name="share-social" size={24} color="#fff" />
+                <Text className="text-white font-semibold text-base ml-3">
+                  Share your era with friends!
+                </Text>
+              </View>
+              <Pressable
+                onPress={handleShare}
+                className="rounded-xl py-2 px-4"
+                style={{ backgroundColor: '#fff' }}
+              >
+                <Text style={{ color: '#ec4899' }} className="font-semibold text-sm">
+                  Share
+                </Text>
+              </Pressable>
+            </View>
+          </LinearGradient>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

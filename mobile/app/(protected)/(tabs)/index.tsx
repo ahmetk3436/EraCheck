@@ -6,16 +6,29 @@ import {
   ScrollView,
   Alert,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+  withDelay,
+  withSpring,
+  Easing,
+} from 'react-native-reanimated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../lib/api';
 import { hapticSuccess, hapticError, hapticLight, hapticSelection } from '../../../lib/haptics';
 import { isGuestMode, getRemainingQuizzes } from '../../../lib/guest';
 import Skeleton from '../../../components/Skeleton';
 import ErrorState from '../../../components/ErrorState';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface Streak {
   current_streak: number;
@@ -54,6 +67,78 @@ const QuizHomeSkeleton: React.FC = () => (
   </View>
 );
 
+interface ConfettiPieceProps {
+  delay: number;
+  startX: number;
+  color: string;
+  size: number;
+}
+
+const ConfettiPiece: React.FC<ConfettiPieceProps> = ({ delay, startX, color, size }) => {
+  const translateY = useSharedValue(0);
+  const translateX = useSharedValue(0);
+  const opacity = useSharedValue(1);
+  const scale = useSharedValue(0);
+  const rotation = useSharedValue(0);
+
+  useEffect(() => {
+    translateY.value = withDelay(
+      delay,
+      withSequence(
+        withTiming(-SCREEN_HEIGHT * 0.7, { duration: 1200, easing: Easing.out(Easing.quad) }),
+        withTiming(-SCREEN_HEIGHT * 0.9, { duration: 300 })
+      )
+    );
+
+    translateX.value = withDelay(
+      delay,
+      withTiming(startX, { duration: 1200 })
+    );
+
+    opacity.value = withDelay(
+      delay + 800,
+      withTiming(0, { duration: 400 })
+    );
+
+    scale.value = withDelay(
+      delay,
+      withSpring(1, { damping: 8 })
+    );
+
+    rotation.value = withDelay(
+      delay,
+      withTiming(360 * 3, { duration: 1200 })
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: translateY.value },
+      { translateX: translateX.value },
+      { scale: scale.value },
+      { rotate: `${rotation.value}deg` },
+    ],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          position: 'absolute',
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: color,
+          left: SCREEN_WIDTH / 2 - size / 2,
+          bottom: SCREEN_HEIGHT * 0.3,
+        },
+        animatedStyle,
+      ]}
+    />
+  );
+};
+
 export default function QuizHomeScreen() {
   const router = useRouter();
   const { isGuest, guestUsageCount, canUseFeature, isAuthenticated } = useAuth();
@@ -63,9 +148,26 @@ export default function QuizHomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [guestRemaining, setGuestRemaining] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  // Check if we should show celebration (after quiz completion)
+  useEffect(() => {
+    const checkCelebration = async () => {
+      const justCompleted = await AsyncStorage.getItem('quiz_just_completed');
+      if (justCompleted === 'true') {
+        await AsyncStorage.removeItem('quiz_just_completed');
+        setShowCelebration(true);
+        hapticSuccess();
+        setTimeout(() => {
+          setShowCelebration(false);
+        }, 1500);
+      }
+    };
+    checkCelebration();
   }, []);
 
   const loadData = useCallback(async () => {
@@ -308,6 +410,36 @@ export default function QuizHomeScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Celebration Overlay */}
+      {showCelebration && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.2)',
+          }}
+          pointerEvents="none"
+        >
+          {[
+            { color: '#ec4899', delay: 0, startX: -100, size: 20 },
+            { color: '#a855f7', delay: 100, startX: -30, size: 16 },
+            { color: '#f43f5e', delay: 200, startX: 40, size: 24 },
+            { color: '#fbbf24', delay: 300, startX: 100, size: 18 },
+          ].map((piece, index) => (
+            <ConfettiPiece
+              key={index}
+              color={piece.color}
+              delay={piece.delay}
+              startX={piece.startX}
+              size={piece.size}
+            />
+          ))}
+        </View>
+      )}
     </SafeAreaView>
   );
 }

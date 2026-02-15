@@ -27,6 +27,7 @@ interface ShareableResultProps {
   userName?: string;
   traits?: string[];
   date?: string;
+  shareCount?: number;
   onShare?: () => void;
 }
 
@@ -48,6 +49,7 @@ export default function ShareableResult({
   userName,
   traits,
   date,
+  shareCount,
   onShare,
 }: ShareableResultProps) {
   const shareCardRef = useRef<View>(null);
@@ -72,10 +74,10 @@ export default function ShareableResult({
         const sourceFile = new File(uri);
         sourceFile.copy(destFile);
 
-        // Share via system sheet
+        // Share via system sheet with message
         await Sharing.shareAsync(destFile.uri, {
           mimeType: 'image/png',
-          dialogTitle: 'Share your Era result',
+          dialogTitle: `I got ${era.title}! Find your aesthetic era on EraCheck ✨`,
         });
 
         hapticSuccess();
@@ -121,6 +123,15 @@ export default function ShareableResult({
           {isSharing ? 'Creating Card...' : 'Share Result'}
         </Text>
       </Pressable>
+
+      {/* Share Count Badge */}
+      {shareCount !== undefined && shareCount > 0 && (
+        <View className="self-center rounded-full py-2 px-4" style={{ backgroundColor: 'rgba(168,85,247,0.15)' }}>
+          <Text className="text-purple-400 font-medium text-sm">
+            Shared {shareCount} {shareCount === 1 ? 'time' : 'times'}
+          </Text>
+        </View>
+      )}
 
       {/* Hidden full-size card for capture */}
       <View className="absolute -left-[9999px] top-0">
