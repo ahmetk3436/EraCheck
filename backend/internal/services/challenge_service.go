@@ -2,10 +2,12 @@ package services
 
 import (
 	"errors"
+	"log"
 	"math/rand"
 	"strings"
 	"time"
 
+	"github.com/ahmetcoskunkizilkaya/EraCheck/backend/internal/config"
 	"github.com/ahmetcoskunkizilkaya/EraCheck/backend/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -13,12 +15,21 @@ import (
 
 // ChallengeService handles daily challenge logic.
 type ChallengeService struct {
-	db *gorm.DB
+	db         *gorm.DB
+	aiAnalyzer *AIAnalyzer
 }
 
 // NewChallengeService creates a new ChallengeService.
-func NewChallengeService(db *gorm.DB) *ChallengeService {
-	return &ChallengeService{db: db}
+func NewChallengeService(db *gorm.DB, cfg *config.Config) *ChallengeService {
+	var aiAnalyzer *AIAnalyzer
+	if cfg != nil {
+		aiAnalyzer = NewAIAnalyzer(cfg.AIAPIURL, cfg.AIAPIKey)
+	}
+
+	return &ChallengeService{
+		db:         db,
+		aiAnalyzer: aiAnalyzer,
+	}
 }
 
 // challengePrompts is the pool of daily challenge prompts.
@@ -78,7 +89,7 @@ func (s *ChallengeService) SubmitChallengeResponse(userID uuid.UUID, response st
 		return nil, errors.New("you have already responded to today's challenge")
 	}
 
-	era := detectEraFromResponse(response)
+	era := s.detectEraFromResponse(response)
 	if era == "unknown" {
 		era = "2022_clean_girl"
 	}
@@ -107,9 +118,25 @@ func (s *ChallengeService) GetChallengeHistory(userID uuid.UUID, limit int) ([]m
 }
 
 // detectEraFromResponse analyzes user text input to determine the most likely era.
-func detectEraFromResponse(input string) string {
-	lowerInput := strings.ToLower(input)
+// It tries AI-powered detection first, falling back to keyword matching if AI is unavailable.
+func (s *ChallengeService) detectEraFromResponse(input string) string {
+	normalizedInput := strings.ToLower(strings.TrimSpace(input))
 
+	// Try AI-powered detection first
+	if s.aiAnalyzer != nil && s.aiAnalyzer.IsConfigured() {
+		era, err := s.aiAnalyzer.AnalyzeEraFromText(normalizedInput)
+		if err == nil && era != "" {
+			return era
+		}
+		log.Printf("AI era analysis failed, falling back to keywords: %v", err)
+	}
+
+	// Fallback to keyword detection
+	return s.detectEraFromKeywords(normalizedInput)
+}
+
+// detectEraFromKeywords uses keyword matching as a fallback for era detection.
+func (s *ChallengeService) detectEraFromKeywords(input string) string {
 	keywords := map[string][]string{
 		"y2k":              {"y2k", "2000s", "butterfly", "paris", "bedazzled", "glitter", "britney", "juicy"},
 		"2016_tumblr":      {"tumblr", "pastel", "galaxy", "grunge", "choker", "flannel", "indie", "band tee"},
@@ -125,7 +152,7 @@ func detectEraFromResponse(input string) string {
 
 	for eraKey, words := range keywords {
 		for _, word := range words {
-			if strings.Contains(lowerInput, word) {
+			if strings.Contains(input, word) {
 				return eraKey
 			}
 		}

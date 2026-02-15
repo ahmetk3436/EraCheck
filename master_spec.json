@@ -1,0 +1,1630 @@
+{
+  "app_name": "EraCheck",
+  "tagline": "Discover your true era — one selfie, zero ads, real results.",
+  "description": "EraCheck analyzes your selfie using on-device facial feature extraction and style detection to match you with your authentic era aesthetic — from Victorian elegance to Y2K maximalism. Unlike inaccurate age-guessing apps, EraCheck uses a multi-signal approach (face shape, coloring, style cues) combined with a short vibe quiz to deliver consistent, shareable results. The app generates stunning era portrait cards designed for Instagram Stories and TikTok sharing.",
+  "target_audience": "Gen Z and Millennial women (16-32) who engage with aesthetic content on TikTok/Instagram, take BuzzFeed-style quizzes, and identify with concepts like 'dark academia' or 'cottagecore'. Secondary: Taylor Swift fans who relate to the 'eras' concept.",
+  "market_research": {
+    "niche": "Era Aesthetic Checker / What Era Am I",
+    "market_size_estimate": "SAM: 5-15 million users interested in aesthetic/personality quizzes and self-discovery apps. TAM could be larger considering the viral potential of shareable results. BuzzFeed quizzes on similar topics get millions of engagements. The aesthetic/vintage photo app market shows 1K-15K reviews per app, indicating active user base. Taylor Swift 'era' concept alone has massive cultural momentum.",
+    "pain_points": [
+      {
+        "description": "Age detection apps are wildly inaccurate, often off by 10+ years, making results meaningless and frustrating",
+        "frequency": 9,
+        "severity": 7,
+        "source": "App Store Reviews",
+        "quotes": [
+          "I'm 14 it said I look 24",
+          "This thing guessed 16 years higher than my actual age",
+          "No matter what picture I upload... I got the same result 28"
+        ]
+      },
+      {
+        "description": "Excessive ads disrupt the user experience and make apps feel like scams",
+        "frequency": 8,
+        "severity": 8,
+        "source": "App Store Reviews",
+        "quotes": [
+          "Game video Ad after ad and nothing else: One after the other and nothing else. A scam this is.",
+          "literally advert after advert having to close the app to get back into it again"
+        ]
+      },
+      {
+        "description": "Aesthetic/vintage photo editors lock most features behind expensive paywalls with very limited free content",
+        "frequency": 7,
+        "severity": 6,
+        "source": "App Store Reviews",
+        "quotes": [
+          "Only two free filters, then you have to pay $4.99 per week. Not worth it to me when there are plenty of free apps that offer a lot more",
+          "You make us pay.."
+        ]
+      },
+      {
+        "description": "No dedicated app exists for the popular 'what era am I' concept - users must rely on web quizzes or unrelated apps",
+        "frequency": 6,
+        "severity": 7,
+        "source": "Web Search Results",
+        "quotes": [
+          "What era / aesthetic are you currently in? : r/AskWomenOver30",
+          "Choose Some Random Aesthetics and We'll Guess Your Core Era - LifeShouts.com"
+        ]
+      },
+      {
+        "description": "Apps crash, have black screens, or timeout during scanning/analysis",
+        "frequency": 5,
+        "severity": 7,
+        "source": "App Store Reviews",
+        "quotes": [
+          "Won't scan: The scan scree is black and timesout",
+          "It only scans and says timed out tried several items"
+        ]
+      }
+    ],
+    "feature_requests": [
+      {
+        "name": "Accurate era/aesthetic matching",
+        "description": "Users want reliable results that actually match their appearance, style, or vibe to a specific era (Victorian, 70s, Y2K, etc.) or aesthetic (cottagecore, dark academia, etc.)",
+        "demand_score": 9,
+        "source": "Web Search Results - Reddit discussions and BuzzFeed quiz popularity"
+      },
+      {
+        "name": "Shareable results",
+        "description": "Results formatted for easy social media sharing (Instagram stories, TikTok) with aesthetic graphics",
+        "demand_score": 8,
+        "source": "Web Search Results - BuzzFeed quiz format and social media trends"
+      },
+      {
+        "name": "Multiple input methods",
+        "description": "Ability to use photos, answer quiz questions, or combine both for more accurate results",
+        "demand_score": 7,
+        "source": "Inferred from competitor app limitations"
+      },
+      {
+        "name": "Detailed era profiles",
+        "description": "After getting a result, users want to learn more about that era's fashion, music, and cultural elements",
+        "demand_score": 6,
+        "source": "Web Search Results - quiz engagement patterns"
+      },
+      {
+        "name": "Taylor Swift era integration",
+        "description": "Option to get matched to a Taylor Swift era (Reputation, Folklore, etc.) given the cultural popularity of this concept",
+        "demand_score": 7,
+        "source": "Reddit - r/TaylorSwift era discussions"
+      }
+    ],
+    "competitors": [
+      {
+        "name": "How Old Do I Look",
+        "rating": 4.1,
+        "review_count": 10768,
+        "price_model": "free",
+        "strengths": [
+          "High download numbers",
+          "Simple concept that appeals to curiosity",
+          "Entertainment category positioning"
+        ],
+        "weaknesses": [
+          "Wildly inaccurate results",
+          "Excessive ads",
+          "Same result regardless of photo",
+          "Safety concerns mentioned"
+        ],
+        "missing_features": [
+          "Era/aesthetic analysis",
+          "Accurate AI detection",
+          "Shareable results"
+        ]
+      },
+      {
+        "name": "How Old Do I Look? Age Camera",
+        "rating": 4.5,
+        "review_count": 2983,
+        "price_model": "free",
+        "strengths": [
+          "Good rating despite complaints",
+          "Age + gender detection features"
+        ],
+        "weaknesses": [
+          "Inaccurate age detection",
+          "Heavy ad presence",
+          "Face detection failures"
+        ],
+        "missing_features": [
+          "Era/aesthetic matching",
+          "Quality AI analysis"
+        ]
+      },
+      {
+        "name": "Aesthetic Vintage Photo Editor",
+        "rating": 4.8,
+        "review_count": 1513,
+        "price_model": "freemium",
+        "strengths": [
+          "High rating",
+          "Hand-crafted filters",
+          "Aesthetic focus aligns with niche"
+        ],
+        "weaknesses": [
+          "Very limited free filters (only 2)",
+          "Expensive subscription ($4.99/week)",
+          "Technical issues with filters not applying"
+        ],
+        "missing_features": [
+          "Era identification feature",
+          "Personality/aesthetic quiz element"
+        ]
+      },
+      {
+        "name": "Aesthetic Photo Editor Vintify",
+        "rating": 4.8,
+        "review_count": 323,
+        "price_model": "freemium",
+        "strengths": [
+          "High rating",
+          "Photo + video editing",
+          "Vintage/retro focus"
+        ],
+        "weaknesses": [
+          "Small user base",
+          "Likely similar paywall issues"
+        ],
+        "missing_features": [
+          "Era matching feature",
+          "Self-discovery element"
+        ]
+      }
+    ],
+    "market_sentiment": "negative",
+    "market_sentiment_score": 2.2,
+    "trends": [
+      "2026 is the 'trust era' - users want transparent, accurate AI features with explanations",
+      "Aesthetic self-discovery content is highly viral on social media (TikTok, Instagram)",
+      "Taylor Swift 'era' concept has mainstreamed the idea of life eras and aesthetic periods",
+      "Users are fatigued by ad-heavy, inaccurate apps and seeking quality alternatives",
+      "Cottagecore, dark academia, Y2K and other aesthetics have sustained popularity"
+    ],
+    "monetization_insights": [
+      "Competitors use freemium model with aggressive paywalls ($4.99/week subscriptions)",
+      "Ad-supported free apps generate significant complaints and lower ratings",
+      "Users willing to pay for quality - but current apps don't deliver value",
+      "Shareable results could drive organic growth, reducing customer acquisition costs",
+      "One-time purchase or reasonable annual subscription may work better than weekly",
+      "Consider offering limited free uses with accurate results to build trust before monetizing"
+    ],
+    "raw_data_summary": "Analyzed 8 App Store apps (age detection, aesthetic editors, antique identifiers) and multiple web sources including Reddit discussions, BuzzFeed quizzes, and trend articles. No direct 'era aesthetic checker' app exists - the niche is served by inaccurate age detection apps and web-based quizzes. Users express frustration with ad-heavy, inaccurate apps while showing strong interest in era/aesthetic self-discovery content on social platforms."
+  },
+  "strategy": {
+    "niche": "Era Aesthetic Checker / What Era Am I",
+    "opportunities": [
+      {
+        "name": "EraCheck",
+        "tagline": "Discover your true era — one selfie, zero ads, real results.",
+        "description": "EraCheck analyzes your selfie using on-device facial feature extraction and style detection to match you with your authentic era aesthetic — from Victorian elegance to Y2K maximalism. Unlike inaccurate age-guessing apps, EraCheck uses a multi-signal approach (face shape, coloring, style cues) combined with a short vibe quiz to deliver consistent, shareable results. The app generates stunning era portrait cards designed for Instagram Stories and TikTok sharing.",
+        "target_audience": "Gen Z and Millennial women (16-32) who engage with aesthetic content on TikTok/Instagram, take BuzzFeed-style quizzes, and identify with concepts like 'dark academia' or 'cottagecore'. Secondary: Taylor Swift fans who relate to the 'eras' concept.",
+        "core_features": [
+          "Selfie-based era analysis using on-device color/feature extraction (skin tone, eye color, dominant colors in clothing/background)",
+          "5-question interactive vibe quiz (music taste, fashion preference, ideal weekend, color palette choice, decade vibe) for hybrid scoring",
+          "12 detailed era profiles with fashion guides, music playlists (Spotify deep links), color palettes, and cultural context",
+          "Shareable era portrait cards with era-specific graphic templates optimized for Instagram Stories and TikTok",
+          "Era history timeline showing how your results evolve over time",
+          "Daily era energy reading based on mood selection (quick re-engagement hook)",
+          "Guest mode with 3 free full analyses before signup required"
+        ],
+        "differentiator": "Only app that combines selfie analysis + personality quiz for era matching (not just age guessing). Deterministic results based on actual visual features, not random assignment. Zero ads — premium experience from first launch. Beautiful, shareable output cards that feel native to social media.",
+        "monetization": "Freemium with contextual paywall. Free: 3 full era analyses, daily energy reading, basic sharing. Premium ($4.99/month or $29.99/year): unlimited analyses, all 12 era deep-dive profiles, premium portrait card templates, era wardrobe recommendations, no watermark on shares. One-time era pack purchases ($1.99 each) for users who don't want subscriptions.",
+        "feasibility": "moderate",
+        "estimated_dev_days": 12,
+        "risk_factors": [
+          "Era matching accuracy perception — users may disagree with results, though hybrid quiz+visual approach mitigates this",
+          "Taylor Swift era references could create trademark concerns if too explicit — use generic era names with cultural parallels instead",
+          "Photo analysis limited to color extraction and basic feature detection on-device — no true AI face analysis without cloud ML",
+          "Content creation burden: 12 detailed era profiles with illustrations/graphics need design investment",
+          "Apple may scrutinize 'selfie analysis' claims — must be transparent about methodology (color/style matching, not AI face reading)"
+        ],
+        "confidence_score": 0.85
+      },
+      {
+        "name": "AestheticMe",
+        "tagline": "Your aesthetic identity, beautifully revealed.",
+        "description": "AestheticMe is a self-discovery app that identifies your core aesthetic through an immersive visual quiz experience. Instead of answering text questions, users swipe through curated mood boards, pick color palettes, and choose between aesthetic scenes to reveal their style DNA. Results map to 20+ aesthetics (cottagecore, dark academia, old money, Y2K, grunge, etc.) with a detailed profile, style guide, and gorgeous shareable cards.",
+        "target_audience": "Aesthetic-obsessed Gen Z users (14-25) on TikTok and Pinterest who already identify with aesthetic subcultures and want validation/discovery of their style identity. Heavy overlap with the Pinterest/mood board community.",
+        "core_features": [
+          "Visual swipe-based aesthetic quiz — choose between curated images rather than text answers for immersive experience",
+          "20+ aesthetic profiles with detailed descriptions, color palettes, font pairings, and style recommendations",
+          "Aesthetic DNA breakdown showing percentage match across top 3 aesthetics (e.g., 45% dark academia, 30% old money, 25% cottagecore)",
+          "Shareable aesthetic cards with custom gradient backgrounds and typography matching the revealed aesthetic",
+          "Seasonal aesthetic updates — new aesthetics and quiz content added quarterly to match trending TikTok aesthetics",
+          "Aesthetic match with friends — share codes to compare aesthetic compatibility"
+        ],
+        "differentiator": "Pure visual quiz experience (no boring text questions). 20+ aesthetics vs competitors' generic era buckets. The percentage-based DNA breakdown gives nuance that simple 'you are X' results lack. Friend comparison feature adds social/viral dimension beyond just sharing results.",
+        "monetization": "Freemium. Free: 1 full aesthetic analysis, 5 base aesthetics, basic sharing. Premium ($3.99/month or $24.99/year): unlimited retakes, all 20+ aesthetics unlocked, premium card templates, friend matching, seasonal content packs. Conversion trigger: show the full DNA breakdown preview (blurred) after free analysis to drive upgrades.",
+        "feasibility": "easy",
+        "estimated_dev_days": 9,
+        "risk_factors": [
+          "Content-heavy — requires 20+ curated aesthetic profiles with high-quality imagery (licensing or creation needed)",
+          "Aesthetic trends shift quickly — requires ongoing content updates to stay relevant",
+          "Lower technical moat — quiz-based apps are easy to clone",
+          "No photo analysis = potentially less 'wow factor' compared to selfie-based competitors",
+          "Apple review: must ensure all quiz imagery is properly licensed or original"
+        ],
+        "confidence_score": 0.78
+      },
+      {
+        "name": "TimeMirror",
+        "tagline": "See yourself through every decade — 1920s to 2020s.",
+        "description": "TimeMirror transforms your selfie into stunning era-specific portraits showing what you'd look like in different decades. Using on-device style transfer with era-specific color grading, typography overlays, and frame treatments, your photo is reimagined across 10 iconic decades. Each transformation comes with your era compatibility score and a cultural snapshot of that period. The app turns a single selfie into a shareable decade carousel perfect for social media.",
+        "target_audience": "Social media content creators and casual users (18-35) who love photo transformation trends (AI yearbook photos, vintage filters). Secondary: history enthusiasts and nostalgia-driven users who enjoy 'what era do I belong in' content.",
+        "core_features": [
+          "Selfie decade transformation using style-transfer color grading, era-specific filters, and overlay treatments for 10 decades (1920s-2020s)",
+          "Era compatibility score for each decade based on facial feature coloring, style analysis, and vibe quiz responses",
+          "Decade carousel generator — creates a swipeable 10-image carousel optimized for Instagram and TikTok",
+          "Cultural time capsule for each era — fashion highlights, iconic music, slang, and pop culture moments",
+          "Before/after comparison slider for each era transformation",
+          "Guest mode with 2 free full decade transformations"
+        ],
+        "differentiator": "Photo transformation + era matching in one app. Unlike generic vintage filters, each decade treatment is historically researched and includes cultural context. The decade carousel format is inherently viral — users love sharing 'me through the decades' content. Compatibility scoring adds the self-discovery element missing from pure filter apps.",
+        "monetization": "Freemium with one-time purchase option. Free: 2 full decade carousels, 3 decades unlocked (1970s, 1990s, 2000s). Premium ($6.99 one-time unlock): all 10 decades, HD export, no watermark, unlimited transformations. Optional: era expansion packs ($1.99 each) for sub-decades (early vs late 80s, etc.). Deliberately avoids subscriptions — market research shows user fatigue with weekly/monthly charges in this category.",
+        "feasibility": "moderate",
+        "estimated_dev_days": 14,
+        "risk_factors": [
+          "Style transfer quality on-device is limited — must use carefully tuned color grading + overlays rather than true neural style transfer",
+          "Users may expect AI-generated face transformations (like AI yearbook trend) which requires cloud ML processing",
+          "10 decades of high-quality filter presets require significant design/photography work",
+          "One-time purchase model generates less recurring revenue than subscriptions",
+          "Photo manipulation apps face higher Apple scrutiny for privacy — must handle photos on-device only and communicate this clearly"
+        ],
+        "confidence_score": 0.72
+      }
+    ],
+    "selected_opportunity": {
+      "name": "EraCheck",
+      "tagline": "Discover your true era — one selfie, zero ads, real results.",
+      "description": "EraCheck analyzes your selfie using on-device facial feature extraction and style detection to match you with your authentic era aesthetic — from Victorian elegance to Y2K maximalism. Unlike inaccurate age-guessing apps, EraCheck uses a multi-signal approach (face shape, coloring, style cues) combined with a short vibe quiz to deliver consistent, shareable results. The app generates stunning era portrait cards designed for Instagram Stories and TikTok sharing.",
+      "target_audience": "Gen Z and Millennial women (16-32) who engage with aesthetic content on TikTok/Instagram, take BuzzFeed-style quizzes, and identify with concepts like 'dark academia' or 'cottagecore'. Secondary: Taylor Swift fans who relate to the 'eras' concept.",
+      "core_features": [
+        "Selfie-based era analysis using on-device color/feature extraction (skin tone, eye color, dominant colors in clothing/background)",
+        "5-question interactive vibe quiz (music taste, fashion preference, ideal weekend, color palette choice, decade vibe) for hybrid scoring",
+        "12 detailed era profiles with fashion guides, music playlists (Spotify deep links), color palettes, and cultural context",
+        "Shareable era portrait cards with era-specific graphic templates optimized for Instagram Stories and TikTok",
+        "Era history timeline showing how your results evolve over time",
+        "Daily era energy reading based on mood selection (quick re-engagement hook)",
+        "Guest mode with 3 free full analyses before signup required",
+        "Contextual paywall triggered after the 'wow moment' of seeing your era result (not on app launch)"
+      ],
+      "differentiator": "Only app that combines selfie analysis + personality quiz for era matching (not just age guessing). Deterministic results based on actual visual features, not random assignment. Zero ads — premium experience from first launch. Beautiful, shareable output cards that feel native to social media.",
+      "monetization": "Freemium with contextual paywall. Free tier: 3 full era analyses, daily energy reading, basic sharing with watermark. Premium ($4.99/month or $29.99/year): unlimited analyses, all 12 era deep-dive profiles, premium portrait card templates, era wardrobe recommendations, no watermark on shares. One-time era pack purchases ($1.99 each) for users who don't want subscriptions.",
+      "feasibility": "moderate",
+      "estimated_dev_days": 12,
+      "risk_factors": [
+        "Era matching accuracy perception — users may disagree with results, though hybrid quiz+visual approach mitigates this",
+        "Taylor Swift era references could create trademark concerns if too explicit — use generic era names with cultural parallels instead",
+        "Photo analysis limited to color extraction and basic feature detection on-device — no true AI face analysis without cloud ML",
+        "Content creation burden: 12 detailed era profiles with illustrations/graphics need design investment",
+        "Apple may scrutinize 'selfie analysis' claims — must be transparent about methodology (color/style matching, not AI face reading)"
+      ],
+      "confidence_score": 0.85
+    },
+    "rejected_features": [
+      {
+        "feature": "Real-time AR era filter overlay (live camera)",
+        "reason": "ARKit integration in React Native/Expo is extremely limited. Would require custom native modules and significant performance optimization. Feasibility: impossible without ejecting from Expo managed workflow.",
+        "alternative": "Static photo analysis with era-specific color grading overlays applied post-capture"
+      },
+      {
+        "feature": "AI-powered face aging/de-aging transformation",
+        "reason": "Requires cloud-based ML models (GANs/diffusion) for realistic face transformation. On-device processing cannot achieve the quality users expect from FaceApp-style results. Would add cloud infrastructure costs and latency.",
+        "alternative": "Era-specific color grading, frame overlays, and typography treatments that stylize the photo without modifying the face"
+      },
+      {
+        "feature": "Spotify/Apple Music playlist generation integration",
+        "reason": "Spotify API requires OAuth flow and has strict rate limits. Apple Music requires MusicKit native framework. Both add significant complexity for a v1 launch.",
+        "alternative": "Deep links to pre-curated Spotify playlists (no API needed) — just open the Spotify app with a playlist URL"
+      },
+      {
+        "feature": "WidgetKit home screen widgets showing daily era",
+        "reason": "WidgetKit requires native Swift code and cannot be built in Expo managed workflow. Would need to eject or use a dev client with custom native modules.",
+        "alternative": "Push notifications for daily era energy reading to maintain engagement without widgets"
+      },
+      {
+        "feature": "Social feed with user-generated era content",
+        "reason": "UGC feed requires content moderation infrastructure (Apple Guideline 1.2), reporting/blocking system, and significantly increases backend complexity. Overkill for v1 and adds Apple review risk.",
+        "alternative": "Share-to-social (Instagram, TikTok) with branded cards — leverages existing social platforms instead of building one"
+      }
+    ],
+    "market_positioning": "Position as the premium, ad-free alternative in a market drowning in inaccurate, ad-heavy novelty apps. The key insight from market research is that users are desperate for quality — they'll pay for an app that actually delivers accurate, beautiful results without being bombarded by ads. Lead with 'zero ads, real results' messaging. Differentiate from BuzzFeed-style web quizzes by offering a native app experience with shareable social media cards (web quizzes produce ugly screenshots). Differentiate from age-detection apps by focusing on era/aesthetic identity rather than age — it's aspirational rather than anxiety-inducing. The guest mode with 3 free analyses builds trust before monetizing (addressing the #1 complaint about premature paywalls). Target organic growth through viral sharing mechanics — every shared era card is a free ad. Avoid Taylor Swift 'eras' branding directly but tap into the cultural concept she popularized. Position the app in the Entertainment category (not Photo & Video) to avoid competing with established photo editors and to align with the self-discovery/quiz use case."
+  },
+  "design_system": {
+    "colors": [
+      {
+        "name": "primary",
+        "hex": "#A855F7",
+        "usage": "Primary brand color, CTAs, era detection glow, active states"
+      },
+      {
+        "name": "secondary",
+        "hex": "#F472B6",
+        "usage": "Secondary accent, quiz selections, feminine touch points"
+      },
+      {
+        "name": "accent",
+        "hex": "#FBBF24",
+        "usage": "Golden highlights, premium indicators, era crowns"
+      },
+      {
+        "name": "background",
+        "hex": "#09090B",
+        "usage": "OLED pure black background, primary surface"
+      },
+      {
+        "name": "surface",
+        "hex": "#18181B",
+        "usage": "Card backgrounds, elevated surfaces, modal bases"
+      },
+      {
+        "name": "surface-elevated",
+        "hex": "#27272A",
+        "usage": "Higher elevation elements, glassmorphism base layer"
+      },
+      {
+        "name": "surface-glass",
+        "hex": "#3F3F46",
+        "usage": "Glassmorphism overlay with reduced opacity"
+      },
+      {
+        "name": "text-primary",
+        "hex": "#FAFAFA",
+        "usage": "Primary text, headings, high-emphasis content"
+      },
+      {
+        "name": "text-secondary",
+        "hex": "#A1A1AA",
+        "usage": "Secondary text, descriptions, supporting content"
+      },
+      {
+        "name": "text-muted",
+        "hex": "#71717A",
+        "usage": "Captions, placeholders, tertiary information"
+      },
+      {
+        "name": "border",
+        "hex": "#3F3F46",
+        "usage": "Subtle borders, dividers, input outlines"
+      },
+      {
+        "name": "border-glow",
+        "hex": "#A855F7",
+        "usage": "Active era card borders, premium feature highlights"
+      },
+      {
+        "name": "success",
+        "hex": "#34D399",
+        "usage": "Success states, completed analyses, confirmations"
+      },
+      {
+        "name": "error",
+        "hex": "#FB7185",
+        "usage": "Error states, validation failures, warnings"
+      },
+      {
+        "name": "gradient-haze-1",
+        "hex": "#A855F7",
+        "usage": "AI gradient haze start - ethereal purple"
+      },
+      {
+        "name": "gradient-haze-2",
+        "hex": "#EC4899",
+        "usage": "AI gradient haze middle - vibrant pink"
+      },
+      {
+        "name": "gradient-haze-3",
+        "hex": "#F97316",
+        "usage": "AI gradient haze end - warm amber"
+      },
+      {
+        "name": "era-victorian",
+        "hex": "#92400E",
+        "usage": "Victorian era accent - antique bronze"
+      },
+      {
+        "name": "era-roaring20s",
+        "hex": "#D4AF37",
+        "usage": "Roaring 20s accent - art deco gold"
+      },
+      {
+        "name": "era-midcentury",
+        "hex": "#059669",
+        "usage": "Mid-century modern accent - teal"
+      },
+      {
+        "name": "era-bohemian",
+        "hex": "#B45309",
+        "usage": "Bohemian era accent - burnt sienna"
+      },
+      {
+        "name": "era-disco",
+        "hex": "#BE185D",
+        "usage": "Disco era accent - hot pink"
+      },
+      {
+        "name": "era-neon80s",
+        "hex": "#0891B2",
+        "usage": "Neon 80s accent - electric cyan"
+      },
+      {
+        "name": "era-grunge",
+        "hex": "#365314",
+        "usage": "Grunge era accent - forest green"
+      },
+      {
+        "name": "era-y2k",
+        "hex": "#7C3AED",
+        "usage": "Y2K era accent - metallic purple"
+      },
+      {
+        "name": "era-indie",
+        "hex": "#475569",
+        "usage": "Indie era accent - slate gray"
+      },
+      {
+        "name": "era-cottagecore",
+        "hex": "#65A30D",
+        "usage": "Cottagecore accent - sage green"
+      },
+      {
+        "name": "era-darkacademia",
+        "hex": "#78350F",
+        "usage": "Dark Academia accent - deep brown"
+      },
+      {
+        "name": "era-cybercore",
+        "hex": "#06B6D4",
+        "usage": "Cybercore accent - neon blue"
+      },
+      {
+        "name": "era-softgirl",
+        "hex": "#F9A8D4",
+        "usage": "Soft Girl accent - blush pink"
+      }
+    ],
+    "typography": [
+      {
+        "name": "display",
+        "font_size": 40,
+        "font_weight": "bold",
+        "line_height": 1.1
+      },
+      {
+        "name": "heading1",
+        "font_size": 32,
+        "font_weight": "bold",
+        "line_height": 1.15
+      },
+      {
+        "name": "heading2",
+        "font_size": 24,
+        "font_weight": "semibold",
+        "line_height": 1.25
+      },
+      {
+        "name": "heading3",
+        "font_size": 20,
+        "font_weight": "semibold",
+        "line_height": 1.3
+      },
+      {
+        "name": "body",
+        "font_size": 16,
+        "font_weight": "normal",
+        "line_height": 1.5
+      },
+      {
+        "name": "body-small",
+        "font_size": 14,
+        "font_weight": "normal",
+        "line_height": 1.5
+      },
+      {
+        "name": "caption",
+        "font_size": 12,
+        "font_weight": "normal",
+        "line_height": 1.4
+      },
+      {
+        "name": "overline",
+        "font_size": 11,
+        "font_weight": "medium",
+        "line_height": 1.2
+      },
+      {
+        "name": "era-title",
+        "font_size": 28,
+        "font_weight": "bold",
+        "line_height": 1.2
+      },
+      {
+        "name": "quiz-option",
+        "font_size": 18,
+        "font_weight": "medium",
+        "line_height": 1.4
+      }
+    ],
+    "spacing": [
+      {
+        "name": "xs",
+        "value": 4
+      },
+      {
+        "name": "sm",
+        "value": 8
+      },
+      {
+        "name": "md",
+        "value": 16
+      },
+      {
+        "name": "lg",
+        "value": 24
+      },
+      {
+        "name": "xl",
+        "value": 32
+      },
+      {
+        "name": "2xl",
+        "value": 48
+      },
+      {
+        "name": "3xl",
+        "value": 64
+      },
+      {
+        "name": "4xl",
+        "value": 96
+      }
+    ],
+    "components": [
+      {
+        "name": "era-card",
+        "border_radius": 28,
+        "padding": "p-6",
+        "shadow": "shadow-xl",
+        "notes": "Glassmorphism with backdrop-blur-xl, gradient border on active, haptic on tap"
+      },
+      {
+        "name": "quiz-card",
+        "border_radius": 20,
+        "padding": "p-5",
+        "shadow": "shadow-lg",
+        "notes": "Interactive quiz options with scale animation on press, 48px min height"
+      },
+      {
+        "name": "portrait-card",
+        "border_radius": 32,
+        "padding": "p-3",
+        "shadow": "shadow-2xl",
+        "notes": "Shareable 9:16 ratio cards for IG Stories, era-specific gradient overlays"
+      },
+      {
+        "name": "button-primary",
+        "border_radius": 16,
+        "padding": "px-8 py-4",
+        "shadow": "shadow-lg",
+        "notes": "Primary CTA with gradient background, 52px min height, haptic feedback"
+      },
+      {
+        "name": "button-secondary",
+        "border_radius": 16,
+        "padding": "px-6 py-3",
+        "shadow": "",
+        "notes": "Outlined style with border, 44px min height"
+      },
+      {
+        "name": "button-ghost",
+        "border_radius": 12,
+        "padding": "px-4 py-3",
+        "shadow": "",
+        "notes": "Text-only button for tertiary actions"
+      },
+      {
+        "name": "chip",
+        "border_radius": 9999,
+        "padding": "px-4 py-2",
+        "shadow": "",
+        "notes": "Pill-shaped era tags, mood indicators, 36px height"
+      },
+      {
+        "name": "modal",
+        "border_radius": 28,
+        "padding": "p-6",
+        "shadow": "shadow-2xl",
+        "notes": "Bottom sheet with glassmorphism backdrop-blur, drag handle"
+      },
+      {
+        "name": "input",
+        "border_radius": 14,
+        "padding": "px-4 py-4",
+        "shadow": "",
+        "notes": "Rounded inputs with subtle border, 52px min height for touch"
+      },
+      {
+        "name": "bento-tile",
+        "border_radius": 20,
+        "padding": "p-5",
+        "shadow": "shadow-md",
+        "notes": "Asymmetric grid tiles for era profile content, varies in size"
+      },
+      {
+        "name": "progress-ring",
+        "border_radius": 9999,
+        "padding": "",
+        "shadow": "",
+        "notes": "Circular analysis progress with animated gradient stroke"
+      },
+      {
+        "name": "timeline-node",
+        "border_radius": 12,
+        "padding": "p-4",
+        "shadow": "shadow-sm",
+        "notes": "Era history timeline entries with date stamps"
+      },
+      {
+        "name": "energy-card",
+        "border_radius": 24,
+        "padding": "p-5",
+        "shadow": "shadow-md",
+        "notes": "Daily energy reading card with animated aura background"
+      },
+      {
+        "name": "paywall-card",
+        "border_radius": 24,
+        "padding": "p-6",
+        "shadow": "shadow-2xl",
+        "notes": "Premium upsell modal with gradient accent border"
+      }
+    ],
+    "overall_style": "Ethereal Minimalism with AI Gradient Haze and Glassmorphism",
+    "dark_mode_palette": [
+      {
+        "name": "background",
+        "hex": "#09090B",
+        "usage": "OLED-optimized pure black for maximum battery efficiency"
+      },
+      {
+        "name": "surface",
+        "hex": "#18181B",
+        "usage": "Primary dark surface for cards and elevated content"
+      },
+      {
+        "name": "surface-elevated",
+        "hex": "#27272A",
+        "usage": "Higher elevation surfaces, hover states"
+      },
+      {
+        "name": "glass-overlay",
+        "hex": "#3F3F46",
+        "usage": "Glassmorphism base with 60% opacity + blur"
+      },
+      {
+        "name": "text-primary",
+        "hex": "#FAFAFA",
+        "usage": "High contrast text, WCAG AAA compliant on dark"
+      },
+      {
+        "name": "text-secondary",
+        "hex": "#A1A1AA",
+        "usage": "Secondary text, WCAG AA compliant on dark"
+      },
+      {
+        "name": "border-subtle",
+        "hex": "#27272A",
+        "usage": "Subtle dark mode borders"
+      }
+    ],
+    "nativewind_config": {
+      "theme": {
+        "extend": {
+          "colors": {
+            "brand": {
+              "primary": "#A855F7",
+              "secondary": "#F472B6",
+              "accent": "#FBBF24"
+            },
+            "surface": {
+              "DEFAULT": "#18181B",
+              "elevated": "#27272A",
+              "glass": "rgba(63, 63, 70, 0.6)"
+            },
+            "era": {
+              "victorian": "#92400E",
+              "roaring20s": "#D4AF37",
+              "midcentury": "#059669",
+              "bohemian": "#B45309",
+              "disco": "#BE185D",
+              "neon80s": "#0891B2",
+              "grunge": "#365314",
+              "y2k": "#7C3AED",
+              "indie": "#475569",
+              "cottagecore": "#65A30D",
+              "darkacademia": "#78350F",
+              "cybercore": "#06B6D4",
+              "softgirl": "#F9A8D4"
+            }
+          },
+          "borderRadius": {
+            "card": "28px",
+            "modal": "28px",
+            "button": "16px",
+            "input": "14px",
+            "chip": "9999px"
+          },
+          "boxShadow": {
+            "glow-purple": "0 0 24px rgba(168, 85, 247, 0.5)",
+            "glow-pink": "0 0 24px rgba(244, 114, 182, 0.5)",
+            "glow-gold": "0 0 24px rgba(251, 191, 36, 0.5)",
+            "glass": "0 8px 32px rgba(0, 0, 0, 0.4)",
+            "card": "0 4px 24px rgba(0, 0, 0, 0.3)"
+          },
+          "backdropBlur": {
+            "glass": "20px",
+            "modal": "24px"
+          },
+          "animation": {
+            "gradient-shift": "gradient-shift 4s ease infinite",
+            "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+            "float": "float 3s ease-in-out infinite"
+          },
+          "keyframes": {
+            "gradient-shift": {
+              "0%, 100%": {
+                "backgroundPosition": "0% 50%"
+              },
+              "50%": {
+                "backgroundPosition": "100% 50%"
+              }
+            },
+            "pulse-glow": {
+              "0%, 100%": {
+                "opacity": "1"
+              },
+              "50%": {
+                "opacity": "0.7"
+              }
+            },
+            "float": {
+              "0%, 100%": {
+                "transform": "translateY(0)"
+              },
+              "50%": {
+                "transform": "translateY(-8px)"
+              }
+            }
+          }
+        }
+      },
+      "plugins": []
+    },
+    "design_notes": [
+      "AI Gradient Haze: Animated purple-pink-amber gradients during era analysis create ethereal 'time travel' feeling",
+      "OLED Deep Dark: Pure #09090B black saves battery on OLED screens, popular with Gen Z aesthetic preference",
+      "Glassmorphism: Cards use backdrop-blur-xl with semi-transparent surfaces for depth without heaviness",
+      "Bento Grid: Era profile pages use asymmetric tile layouts for dynamic, Pinterest-like content discovery",
+      "Haptic-Visual Sync: Era reveal animations paired with gentle haptic feedback for premium tactile experience",
+      "Touch Targets: All interactive elements exceed 44x44px minimum, primary buttons at 52px for comfort",
+      "Shareable Cards: Portrait cards designed at 9:16 ratio (1080x1920) for native Instagram Stories fit",
+      "12 Era Palette: Each era has signature color used consistently across cards, icons, and gradients",
+      "WCAG AA Compliance: All text maintains 4.5:1 contrast ratio, interactive elements have clear focus states",
+      "Contextual Paywall: Premium upsell appears after 'wow moment' with celebratory animation, not on launch",
+      "Animation Philosophy: Smooth 300ms transitions, ease-out curves, dreamy motion matching 'era discovery' theme",
+      "Gender-Inclusive: Purple/pink palette feels feminine without being exclusionary, tested with target demographic"
+    ]
+  },
+  "ux_architecture": {
+    "screens": [
+      {
+        "name": "index",
+        "route": "app/index.tsx",
+        "description": "Smart router: checks AsyncStorage for onboarding completion → checks guest mode availability → checks JWT auth state → redirects to appropriate screen. Priority: onboarding (first launch) → guest home (not signed in, uses < 3) → auth/login (not signed in, uses >= 3) → protected/home (signed in).",
+        "components": [
+          "ActivityIndicator centered on screen with bg #0A0A0F",
+          "useEffect routing logic on mount"
+        ],
+        "api_calls": []
+      },
+      {
+        "name": "_layout",
+        "route": "app/_layout.tsx",
+        "description": "Root layout wrapping entire app. Provides AuthProvider, SubscriptionProvider. Uses Slot (NOT Stack/Tabs). Sets StatusBar style='light' backgroundColor='#0A0A0F'. Loads Inter font family (400, 500, 600, 700).",
+        "components": [
+          "Slot from expo-router",
+          "AuthProvider",
+          "SubscriptionProvider",
+          "StatusBar style='light'"
+        ],
+        "api_calls": []
+      },
+      {
+        "name": "Onboarding Step 1",
+        "route": "app/(auth)/onboarding.tsx",
+        "description": "3-step horizontal swipeable onboarding using FlatList with pagingEnabled. Step 1: 'Discover Your Era' — large era collage illustration (placeholder gradient art), headline 'Which era is your soul from?', subtext 'One selfie. Five questions. Your true era revealed.' Step 2: 'AI-Powered Analysis' — camera icon with radiating rings animation, headline 'Selfie + Vibe Quiz', subtext 'We analyze your colors, style energy, and personality to match your era.' Step 3: 'Share Your Identity' — mockup of era portrait card, headline 'Stunning Era Cards', subtext 'Share your era identity on Instagram Stories and TikTok.' Bottom: dot indicators (active #C084FC, inactive #2D2D3A), 'Next' button on steps 1-2, 'Get Started' button on step 3. Skip button top-right on all steps. Background: #0A0A0F. All text: #F5F5F7.",
+        "components": [
+          "FlatList horizontal pagingEnabled",
+          "Animated dot indicators",
+          "Pressable 'Next' button bg #7C3AED rounded-2xl h-14",
+          "Pressable 'Get Started' button bg #7C3AED",
+          "Pressable 'Skip' text button top-right #8B8B9E",
+          "LinearGradient decorative backgrounds per step"
+        ],
+        "api_calls": []
+      },
+      {
+        "name": "Login",
+        "route": "app/(auth)/login.tsx",
+        "description": "Login screen with email/password fields. Top: 'Welcome Back' headline #F5F5F7, 'Sign in to access your era history' subtext #8B8B9E. Email TextInput with Ionicons mail-outline icon prefix, bg #1C1C2E border #2D2D3A rounded-xl h-14 text #F5F5F7 placeholder #5A5A6E. Password TextInput with lock-closed-outline icon, same styling, eye toggle for visibility. 'Sign In' button full-width bg #7C3AED h-14 rounded-2xl text #FFFFFF font-semibold. Divider '— or —' #5A5A6E. Apple Sign In button (dark style) full-width. Bottom: 'Don't have an account? Sign Up' with 'Sign Up' in #C084FC linking to register. Background #0A0A0F.",
+        "components": [
+          "TextInput email with mail-outline icon",
+          "TextInput password with lock-closed-outline icon and eye toggle",
+          "Pressable 'Sign In' button bg #7C3AED",
+          "AppleSignInButton dark style",
+          "Link to register screen"
+        ],
+        "api_calls": [
+          "POST /api/auth/login",
+          "POST /api/auth/apple"
+        ]
+      },
+      {
+        "name": "Register",
+        "route": "app/(auth)/register.tsx",
+        "description": "Registration screen. Top: 'Create Account' headline #F5F5F7, 'Start discovering your true era' subtext #8B8B9E. Email TextInput (same style as login). Password TextInput with strength indicator bar below (weak=#EF4444, medium=#F59E0B, strong=#22C55E). Confirm Password TextInput. 'Create Account' button full-width bg #7C3AED. Apple Sign In button. Bottom: 'Already have an account? Sign In' with 'Sign In' in #C084FC. On success: auto-login + navigate to protected/home with success haptic. Background #0A0A0F.",
+        "components": [
+          "TextInput email",
+          "TextInput password with strength bar",
+          "TextInput confirm password",
+          "Pressable 'Create Account' button bg #7C3AED",
+          "AppleSignInButton",
+          "Password strength indicator (3-segment bar)",
+          "Link to login screen"
+        ],
+        "api_calls": [
+          "POST /api/auth/register",
+          "POST /api/auth/apple"
+        ]
+      },
+      {
+        "name": "Auth Layout",
+        "route": "app/(auth)/_layout.tsx",
+        "description": "Auth group layout. Uses Slot. No tab bar visible. Background #0A0A0F. SafeAreaView wrapping.",
+        "components": [
+          "Slot",
+          "SafeAreaView bg #0A0A0F"
+        ],
+        "api_calls": []
+      },
+      {
+        "name": "Protected Layout",
+        "route": "app/(protected)/_layout.tsx",
+        "description": "Protected group layout with custom tab bar at bottom. Uses Slot (NOT Tabs component). Auth guard: if not authenticated AND not guest, redirect to login. Custom tab bar built with View + Pressable items at bottom. Tab bar bg #111118 borderTopColor #1C1C2E h-20 (including safe area). Active tab icon color #C084FC, active label color #C084FC. Inactive icon color #5A5A6E, inactive label color #5A5A6E. 4 tab items. Center analyze button is elevated with gradient ring.",
+        "components": [
+          "Slot from expo-router",
+          "View custom tab bar h-20 bg #111118",
+          "4x Pressable tab items",
+          "Center 'Analyze' button with LinearGradient ring #7C3AED→#C084FC",
+          "Ionicons for tab icons",
+          "Text labels 11px font-medium"
+        ],
+        "api_calls": []
+      },
+      {
+        "name": "Home",
+        "route": "app/(protected)/home.tsx",
+        "description": "Main home screen. Top: 'Your Era' section showing last analysis result as a hero card — LinearGradient card (era-specific colors) with era name in large serif-style font, era tagline, date of analysis, and miniature portrait. If no analysis yet: empty state card 'Discover Your Era' with camera icon and CTA 'Take Your First Selfie' button. Below hero: 'Daily Era Energy' card — mood selector with 5 emotion icons (energized ⚡, calm 🌊, creative 🎨, romantic 💫, rebellious 🔥), tap one to get a quick era energy reading (e.g., 'Your 70s disco energy is radiating today'). Below: 'Era History' horizontal ScrollView showing past analysis cards (era name + date + small gradient thumbnail), max 5 recent. If guest: UsageBadge top-right showing '2 analyses left' in #F59E0B. Pull-to-refresh. Background #0A0A0F.",
+        "components": [
+          "Hero era result card with LinearGradient",
+          "Empty state CTA card if no analysis",
+          "Daily Era Energy mood selector (5 icons in a row)",
+          "Era energy reading text with animated reveal",
+          "Horizontal ScrollView of past era cards",
+          "UsageBadge for guest users (top-right)",
+          "RefreshControl",
+          "hapticSuccess on mood select"
+        ],
+        "api_calls": [
+          "GET /api/analyses/latest",
+          "GET /api/analyses/history?limit=5",
+          "POST /api/analyses/daily-energy"
+        ]
+      },
+      {
+        "name": "Analyze",
+        "route": "app/(protected)/analyze.tsx",
+        "description": "Core analysis flow — multi-step screen. Step 1: Selfie capture. Full-screen camera view using expo-camera with face detection overlay (oval guide). 'Take Selfie' circular button (64x64 bg #7C3AED) at bottom center. Option to pick from gallery (image-outline icon top-right). After capture: preview with 'Retake' and 'Use This' buttons. Step 2: Vibe Quiz. 5 sequential questions with animated transitions (slide left). Each question: headline text #F5F5F7, 4 option cards (Pressable, bg #1C1C2E border #2D2D3A rounded-xl p-4, selected: border #7C3AED bg #1A1A2E). Progress bar at top (5 segments, filled #7C3AED, empty #2D2D3A). Questions: Q1 'Pick your anthem decade' (60s/70s/80s/90s/Y2K/2010s), Q2 'Your ideal weekend?' (Vinyl shopping/Beach bonfire/Art gallery/Gaming marathon), Q3 'Fashion vibe?' (Bold & colorful/Minimalist chic/Vintage thrift/Streetwear edge), Q4 'Choose a color palette' (4 gradient swatches to tap), Q5 'Your energy right now?' (Dreamy/Electric/Chill/Fierce). Step 3: Analysis processing. Animated screen showing 'Analyzing your era DNA...' with pulsing concentric rings animation (#7C3AED opacity layers). 3 status lines appearing sequentially: 'Reading your colors...' → 'Matching your vibe...' → 'Discovering your era...'. 2-3 second artificial delay for drama. Step 4: Result reveal. Navigate to result screen. Guest check: before starting, check canUseFeature(). If guest uses exhausted, show soft paywall.",
+        "components": [
+          "expo-camera CameraView with face oval guide overlay",
+          "Pressable capture button 64x64 rounded-full bg #7C3AED",
+          "Gallery picker button (image-outline icon)",
+          "Selfie preview with Retake/Use This buttons",
+          "Quiz progress bar (5 segments)",
+          "4x Pressable option cards per question",
+          "Animated slide transitions between questions",
+          "Processing screen with pulsing rings animation (Reanimated)",
+          "Sequential status text reveal",
+          "hapticMedium on each quiz answer",
+          "hapticSuccess on analysis complete"
+        ],
+        "api_calls": [
+          "POST /api/analyses (multipart: selfie image + quiz answers)"
+        ]
+      },
+      {
+        "name": "Result",
+        "route": "app/(protected)/result.tsx",
+        "description": "Era result reveal screen. Receives analysisId as route param. Top: era portrait card — full-width LinearGradient (era-specific gradient, e.g., 70s=#F59E0B→#EF4444, 80s=#EC4899→#8B5CF6, 90s=#06B6D4→#8B5CF6, Victorian=#8B7355→#D4A574, Y2K=#EC4899→#06B6D4, 60s=#22C55E→#F59E0B). Card contains: era name in 36px bold, era decade/period, match percentage (e.g., '87% Match'), user's selfie small circular overlay. Below card: 4 expandable sections (Pressable accordion). Section 1: 'Fashion Guide' — 3-4 fashion tips specific to era with small illustrative icons. Section 2: 'Music Playlist' — 5 song recommendations with 'Open in Spotify' deep link buttons (Pressable, bg #1DB954 rounded-lg). Section 3: 'Color Palette' — 5 hex color circles with labels (e.g., 'Harvest Gold #DAA520'). Section 4: 'Cultural Context' — 2-3 paragraph text about the era's cultural significance. Bottom sticky: 'Share Your Era' button (bg #7C3AED full-width h-14 rounded-2xl) → opens share sheet. 'Analyze Again' text button below. CONTEXTUAL PAYWALL: If guest user seeing result for the 3rd time, after 2-second delay show paywall modal overlay on top of result (user sees their result, then paywall slides up from bottom). Background #0A0A0F.",
+        "components": [
+          "LinearGradient era portrait card (era-specific colors)",
+          "Era name text 36px bold #F5F5F7",
+          "Match percentage badge",
+          "User selfie circular thumbnail",
+          "4x Accordion sections (Pressable toggle)",
+          "Fashion guide list items with icons",
+          "Spotify deep link buttons bg #1DB954",
+          "Color palette circles with hex labels",
+          "Cultural context paragraphs",
+          "Sticky bottom 'Share Your Era' button bg #7C3AED",
+          "'Analyze Again' text button #C084FC",
+          "Contextual paywall modal (guest 3rd use)",
+          "hapticSuccess on result reveal",
+          "Animated entrance (FadeInUp)"
+        ],
+        "api_calls": [
+          "GET /api/analyses/:id"
+        ]
+      },
+      {
+        "name": "Share",
+        "route": "app/(protected)/share.tsx",
+        "description": "Era portrait card generator for sharing. Receives analysisId as route param. Shows a beautifully designed era card optimized for Instagram Stories (1080x1920 aspect) and TikTok. Card includes: era-specific gradient background, era name in decorative font, user's dominant color palette as accent stripe, match percentage, 'Discovered on EraCheck' watermark at bottom. Two format toggle buttons: 'Story' (9:16) and 'Square' (1:1). 'Save to Photos' button (download-outline icon, bg #1C1C2E border #2D2D3A). 'Share' button (bg #7C3AED) opens native share sheet via expo-sharing. ViewShot wrapper for screenshot capture. Background #0A0A0F.",
+        "components": [
+          "ViewShot wrapper for capture",
+          "Era portrait card with LinearGradient",
+          "Era name decorative text",
+          "Color palette accent stripe",
+          "Match percentage display",
+          "'Discovered on EraCheck' watermark text #5A5A6E",
+          "Format toggle: Story 9:16 / Square 1:1",
+          "Pressable 'Save to Photos' button bg #1C1C2E",
+          "Pressable 'Share' button bg #7C3AED",
+          "hapticSuccess on save/share"
+        ],
+        "api_calls": [
+          "GET /api/analyses/:id"
+        ]
+      },
+      {
+        "name": "Timeline",
+        "route": "app/(protected)/timeline.tsx",
+        "description": "Era history timeline screen. Vertical ScrollView showing all past analyses in reverse chronological order. Each entry: date label (#8B8B9E), era result card (compact — era name, match %, small gradient bar in era colors, thumbnail). Cards are connected by a vertical timeline line (#2D2D3A, 2px wide) on the left side. Tap any card → navigate to that result. Top: 'Your Era Journey' headline #F5F5F7, total analyses count badge. If < 2 analyses: motivational empty state 'Keep analyzing to see your era evolution!' with illustration. Filter chips at top: 'All', 'This Month', 'This Year'. Stats summary at top: most common era name, total analyses count, longest streak. Background #0A0A0F. Requires auth (not available in guest mode).",
+        "components": [
+          "ScrollView vertical",
+          "Timeline line View 2px bg #2D2D3A",
+          "Era result compact cards with gradient bar",
+          "Date labels #8B8B9E",
+          "Filter chips row (All / This Month / This Year)",
+          "Stats summary (most common era, count, streak)",
+          "Empty state illustration + text",
+          "Pressable cards → navigate to result/:id"
+        ],
+        "api_calls": [
+          "GET /api/analyses/history?limit=50",
+          "GET /api/analyses/stats"
+        ]
+      },
+      {
+        "name": "Paywall",
+        "route": "app/(protected)/paywall.tsx",
+        "description": "Contextual paywall screen. Can be shown as modal overlay or standalone. Top: 'Unlock Unlimited Eras' headline #F5F5F7, 'Your era journey doesn't have to end' subtext #8B8B9E. Feature list with checkmark icons (#22C55E): 'Unlimited era analyses', 'Full era history timeline', 'Daily era energy readings', 'Exclusive era portrait templates', 'Ad-free experience'. 3 pricing cards (Pressable, bg #1C1C2E border #2D2D3A rounded-2xl p-5): Weekly $2.99/week (no badge), Annual $39.99/year (badge: 'Best Value' bg #22C55E), Monthly $4.99/month (no badge). Selected card: border #7C3AED bg #1A1A2E. 'Subscribe' button bg #7C3AED h-14 rounded-2xl. 'Restore Purchases' text button #8B8B9E below. Terms/Privacy links at very bottom #5A5A6E. Close X button top-right if shown as modal. Background #0A0A0F.",
+        "components": [
+          "Headline 'Unlock Unlimited Eras' 28px bold",
+          "Feature list with checkmark-circle icons #22C55E",
+          "3x Pricing cards (Weekly, Annual 'Best Value', Monthly)",
+          "Pressable 'Subscribe' button bg #7C3AED h-14",
+          "Pressable 'Restore Purchases' text button #8B8B9E",
+          "Terms and Privacy text links #5A5A6E",
+          "Close X button top-right (if modal)",
+          "hapticSuccess on subscribe",
+          "RevenueCat purchase flow"
+        ],
+        "api_calls": [
+          "RevenueCat SDK getOfferings",
+          "RevenueCat SDK purchasePackage",
+          "RevenueCat SDK restorePurchases"
+        ]
+      },
+      {
+        "name": "Settings",
+        "route": "app/(protected)/settings.tsx",
+        "description": "Settings screen. Grouped sections with section headers in #8B8B9E uppercase 12px tracking-wider. Section 'Account': Profile row (email, edit icon), Subscription status (Free/Premium badge), Restore Purchases. Section 'Preferences': Notifications toggle, Haptic feedback toggle. Section 'Privacy & Security': Biometric lock toggle (uses expo-local-authentication), Privacy Policy (external link), Terms of Service (external link). Section 'Data': Export My Data, Clear Analysis History (with confirmation alert). Section 'Danger Zone': Delete Account (red text #EF4444, confirmation modal with password). App version at bottom center #5A5A6E. Each row: Pressable h-14 flex-row items-center justify-between px-4 bg #1C1C2E rounded-xl mb-2. Icons on left (Ionicons), chevron-forward on right for navigation items. Background #0A0A0F.",
+        "components": [
+          "ScrollView with grouped sections",
+          "Section headers uppercase 12px #8B8B9E",
+          "Settings rows: Pressable h-14 bg #1C1C2E rounded-xl",
+          "Toggle switches (notifications, haptics, biometric)",
+          "Subscription status badge (Free=#5A5A6E / Premium=#7C3AED)",
+          "Delete Account button text #EF4444",
+          "Delete confirmation modal with password input",
+          "App version text bottom #5A5A6E",
+          "hapticLight on toggle changes"
+        ],
+        "api_calls": [
+          "DELETE /api/auth/account",
+          "POST /api/auth/logout",
+          "GET /api/user/profile",
+          "PUT /api/user/preferences"
+        ]
+      },
+      {
+        "name": "Guest Home",
+        "route": "app/(protected)/guest-home.tsx",
+        "description": "Landing screen for guest (non-authenticated) users. Visually similar to Home but with guest-specific messaging. Top: 'EraCheck' logo text in gradient (#7C3AED→#C084FC). Hero section: animated gradient orb (Reanimated scale pulse) with 'Which Era Are You?' text overlay 32px bold. UsageBadge showing remaining free analyses (e.g., '3 Free Analyses' in #F59E0B if 3 left, #EF4444 if 0 left). Large CTA button 'Discover Your Era' bg #7C3AED h-16 rounded-2xl → navigates to analyze screen. Below: 3 FeatureCards in vertical stack — 'AI Color Analysis', 'Vibe Quiz Match', 'Shareable Era Cards' — each with icon, title, brief description, bg #1C1C2E rounded-2xl p-4. Bottom: 'Already have an account? Sign In' link #C084FC. Background #0A0A0F.",
+        "components": [
+          "EraCheck gradient logo text",
+          "Animated gradient orb (Reanimated)",
+          "UsageBadge showing remaining free uses",
+          "Large CTA 'Discover Your Era' button bg #7C3AED h-16",
+          "3x FeatureCard components bg #1C1C2E",
+          "'Sign In' link text #C084FC",
+          "hapticMedium on CTA press"
+        ],
+        "api_calls": []
+      },
+      {
+        "name": "Shareable Result (Public)",
+        "route": "app/shared-result.tsx",
+        "description": "Public shareable result screen accessible without auth (deep link target). Receives analysisId as route param. Shows era portrait card (read-only, no edit). Era name, match %, color palette, brief cultural blurb. CTA at bottom: 'Discover Your Era Too' button bg #7C3AED → routes to app download or index. 'Download EraCheck' with App Store badge. No tab bar visible. Background #0A0A0F.",
+        "components": [
+          "Era portrait card (LinearGradient, read-only)",
+          "Era name and match percentage",
+          "Color palette circles",
+          "Brief era description",
+          "CTA 'Discover Your Era Too' button bg #7C3AED",
+          "App Store download badge"
+        ],
+        "api_calls": [
+          "GET /api/analyses/:id/public"
+        ]
+      }
+    ],
+    "flows": [
+      {
+        "name": "onboarding",
+        "steps": [
+          "index (check first launch)",
+          "onboarding step 1: Discover Your Era",
+          "onboarding step 2: AI-Powered Analysis",
+          "onboarding step 3: Share Your Identity",
+          "guest-home (continue as guest) OR login (sign in)"
+        ],
+        "description": "First-time user experience. 3-step swipeable onboarding introducing app value. On completion, user can continue as guest (3 free analyses) or sign in/register. AsyncStorage flag 'onboarding_complete' persisted."
+      },
+      {
+        "name": "guest_analysis",
+        "steps": [
+          "guest-home (tap Discover Your Era)",
+          "analyze step 1: take selfie",
+          "analyze step 2: 5-question vibe quiz",
+          "analyze step 3: processing animation",
+          "result (view era result)",
+          "share (optional: share era card)",
+          "paywall (shown after 3rd analysis as contextual modal on result screen)"
+        ],
+        "description": "Guest user analysis flow. Guest can perform 3 full analyses without account. On the 3rd analysis result screen, after 2-second delay, contextual paywall slides up. Guest usage tracked in AsyncStorage ('guest_usage_count'). Each analysis increments counter."
+      },
+      {
+        "name": "authenticated_analysis",
+        "steps": [
+          "home (tap hero card CTA or use Analyze tab)",
+          "analyze step 1: take selfie",
+          "analyze step 2: 5-question vibe quiz",
+          "analyze step 3: processing animation",
+          "result (view era result with all sections)",
+          "share (optional: share era card)"
+        ],
+        "description": "Authenticated user analysis flow. Unlimited analyses for premium users. Free tier users see paywall after exceeding limit. Results saved to server and appear in timeline."
+      },
+      {
+        "name": "daily_energy",
+        "steps": [
+          "home (tap mood icon in Daily Era Energy section)",
+          "home (view era energy reading text animation)"
+        ],
+        "description": "Quick re-engagement flow. User taps one of 5 mood icons on home screen. App returns a brief era-themed energy reading based on mood + their last era result. Response animated with typewriter text reveal. Haptic feedback on selection. Available once per day (resets at midnight). Available to authenticated users only."
+      },
+      {
+        "name": "timeline_browse",
+        "steps": [
+          "timeline (scroll through past results)",
+          "result (tap any card to view full result)",
+          "share (optional: share from result)"
+        ],
+        "description": "User browses their analysis history. Timeline shows all past results in reverse chronological order with era-colored gradient bars. Tap any entry to view full result. Stats summary at top. Authenticated users only."
+      },
+      {
+        "name": "settings_management",
+        "steps": [
+          "settings (view/modify preferences)",
+          "paywall (tap subscription → manage)",
+          "settings (delete account flow with password confirmation)"
+        ],
+        "description": "User manages account, subscription, and preferences. Delete account requires password confirmation modal. Restore purchases available. Toggle notifications, haptics, biometric lock."
+      }
+    ],
+    "navigation_type": "custom_tab_bar",
+    "tab_bar_items": [
+      {
+        "label": "Home",
+        "icon": "home-outline",
+        "icon_active": "home",
+        "route": "/(protected)/home",
+        "color_active": "#C084FC",
+        "color_inactive": "#5A5A6E"
+      },
+      {
+        "label": "Analyze",
+        "icon": "camera-outline",
+        "icon_active": "camera",
+        "route": "/(protected)/analyze",
+        "color_active": "#C084FC",
+        "color_inactive": "#5A5A6E",
+        "is_center": true,
+        "elevated": true,
+        "gradient_ring": [
+          "#7C3AED",
+          "#C084FC"
+        ],
+        "size": 56
+      },
+      {
+        "label": "Timeline",
+        "icon": "time-outline",
+        "icon_active": "time",
+        "route": "/(protected)/timeline",
+        "color_active": "#C084FC",
+        "color_inactive": "#5A5A6E"
+      },
+      {
+        "label": "Settings",
+        "icon": "settings-outline",
+        "icon_active": "settings",
+        "route": "/(protected)/settings",
+        "color_active": "#C084FC",
+        "color_inactive": "#5A5A6E"
+      }
+    ],
+    "mermaid_diagram": "graph TD\n    A[App Launch / index.tsx] -->|First Launch| B[Onboarding 3 Steps]\n    A -->|Returning Guest| C[Guest Home]\n    A -->|Authenticated| D[Home]\n    A -->|Guest Expired| E[Login]\n\n    B -->|Continue as Guest| C\n    B -->|Sign In| E\n\n    E -->|Login Success| D\n    E -->|Register| F[Register]\n    F -->|Auto Login| D\n\n    C -->|Discover Your Era| G[Analyze: Selfie]\n    D -->|Analyze Tab / CTA| G\n\n    G -->|Capture Selfie| H[Analyze: Vibe Quiz 5Q]\n    H -->|Complete Quiz| I[Analyze: Processing]\n    I -->|Analysis Complete| J[Result Screen]\n\n    J -->|Share| K[Share Card Generator]\n    J -->|Analyze Again| G\n    J -->|Guest 3rd Use| L[Paywall Modal]\n\n    D -->|Mood Select| M[Daily Era Energy Reading]\n    D -->|Timeline Tab| N[Timeline]\n    N -->|Tap Entry| J\n    D -->|Settings Tab| O[Settings]\n    O -->|Manage Sub| L\n    O -->|Delete Account| P[Delete Confirmation]\n\n    L -->|Subscribe| Q[RevenueCat Purchase]\n    L -->|Restore| R[Restore Purchases]\n    L -->|Close| J\n\n    K -->|Save to Photos| K\n    K -->|Share Sheet| S[Native Share]\n\n    style A fill:#0A0A0F,stroke:#7C3AED,color:#F5F5F7\n    style B fill:#1C1C2E,stroke:#7C3AED,color:#F5F5F7\n    style C fill:#1C1C2E,stroke:#F59E0B,color:#F5F5F7\n    style D fill:#1C1C2E,stroke:#C084FC,color:#F5F5F7\n    style G fill:#1A1A2E,stroke:#7C3AED,color:#F5F5F7\n    style J fill:#1A1A2E,stroke:#22C55E,color:#F5F5F7\n    style L fill:#1A1A2E,stroke:#EF4444,color:#F5F5F7"
+  },
+  "backend_spec": {
+    "models": [
+      {
+        "name": "User",
+        "table": "users",
+        "fields": {
+          "ID": "uuid;default:gen_random_uuid();primaryKey",
+          "Email": "string;uniqueIndex;not null",
+          "PasswordHash": "string",
+          "AppleUserID": "string;uniqueIndex",
+          "DisplayName": "string;size:100",
+          "AvatarURL": "string",
+          "IsGuest": "bool;default:false",
+          "GuestUsageCount": "int;default:0",
+          "CreatedAt": "time.Time;autoCreateTime",
+          "UpdatedAt": "time.Time;autoUpdateTime",
+          "DeletedAt": "gorm.DeletedAt;index"
+        }
+      },
+      {
+        "name": "RefreshToken",
+        "table": "refresh_tokens",
+        "fields": {
+          "ID": "uuid;default:gen_random_uuid();primaryKey",
+          "UserID": "uuid;index;not null",
+          "Token": "string;uniqueIndex;not null",
+          "ExpiresAt": "time.Time;not null",
+          "CreatedAt": "time.Time;autoCreateTime",
+          "DeletedAt": "gorm.DeletedAt;index"
+        },
+        "relations": {
+          "User": "belongsTo User"
+        }
+      },
+      {
+        "name": "Subscription",
+        "table": "subscriptions",
+        "fields": {
+          "ID": "uuid;default:gen_random_uuid();primaryKey",
+          "UserID": "uuid;uniqueIndex;not null",
+          "RevenueCatID": "string;uniqueIndex",
+          "ProductID": "string;not null",
+          "Status": "string;not null;default:active",
+          "Platform": "string;size:20",
+          "ExpiresAt": "time.Time",
+          "CreatedAt": "time.Time;autoCreateTime",
+          "UpdatedAt": "time.Time;autoUpdateTime",
+          "DeletedAt": "gorm.DeletedAt;index"
+        },
+        "relations": {
+          "User": "belongsTo User"
+        },
+        "notes": "Status enum: active, expired, cancelled, billing_retry"
+      },
+      {
+        "name": "EraAnalysis",
+        "table": "era_analyses",
+        "fields": {
+          "ID": "uuid;default:gen_random_uuid();primaryKey",
+          "UserID": "uuid;index;not null",
+          "PrimaryEraID": "string;not null",
+          "SecondaryEraID": "string",
+          "ConfidenceScore": "float64;not null",
+          "SelfieColors": "jsonb;not null",
+          "QuizAnswers": "jsonb;not null",
+          "ScoringBreakdown": "jsonb;not null",
+          "ShareCardURL": "string",
+          "IsGuestAnalysis": "bool;default:false",
+          "CreatedAt": "time.Time;autoCreateTime",
+          "DeletedAt": "gorm.DeletedAt;index"
+        },
+        "relations": {
+          "User": "belongsTo User"
+        },
+        "notes": "SelfieColors stores {skinTone: string, eyeColor: string, dominantColors: []string, clothingColors: []string, backgroundColors: []string}. QuizAnswers stores {musicTaste: string, fashionPref: string, idealWeekend: string, colorPaletteChoice: string, decadeVibe: string}. ScoringBreakdown stores {selfieWeight: float, quizWeight: float, eraScores: map[string]float}."
+      },
+      {
+        "name": "EraProfile",
+        "table": "era_profiles",
+        "fields": {
+          "ID": "string;primaryKey",
+          "Name": "string;not null",
+          "Tagline": "string;not null",
+          "Description": "text;not null",
+          "TimePeriod": "string;not null",
+          "FashionGuide": "jsonb;not null",
+          "MusicPlaylist": "jsonb;not null",
+          "ColorPalette": "jsonb;not null",
+          "CulturalContext": "text;not null",
+          "CardTemplateURL": "string;not null",
+          "IconEmoji": "string;not null",
+          "SortOrder": "int;not null",
+          "CreatedAt": "time.Time;autoCreateTime",
+          "UpdatedAt": "time.Time;autoUpdateTime"
+        },
+        "notes": "12 eras: victorian, art_deco, rockabilly_50s, mod_60s, disco_70s, new_wave_80s, grunge_90s, y2k, indie_2010s, cottagecore, dark_academia, cyber_futurist. FashionGuide stores {essentials: []string, brands: []string, styling_tips: []string}. MusicPlaylist stores {spotifyDeepLink: string, tracks: [{artist: string, title: string, spotifyURI: string}]}. ColorPalette stores {primary: string, secondary: string, accent: string, background: string, text: string} as hex codes."
+      },
+      {
+        "name": "DailyEraEnergy",
+        "table": "daily_era_energies",
+        "fields": {
+          "ID": "uuid;default:gen_random_uuid();primaryKey",
+          "UserID": "uuid;index;not null",
+          "MoodSelection": "string;not null",
+          "EraEnergyID": "string;not null",
+          "EnergyMessage": "text;not null",
+          "EnergyTip": "text;not null",
+          "Date": "date;not null",
+          "CreatedAt": "time.Time;autoCreateTime"
+        },
+        "relations": {
+          "User": "belongsTo User"
+        },
+        "notes": "MoodSelection enum: energized, calm, creative, nostalgic, bold, dreamy. One entry per user per day (unique index on UserID+Date)."
+      },
+      {
+        "name": "ShareCard",
+        "table": "share_cards",
+        "fields": {
+          "ID": "uuid;default:gen_random_uuid();primaryKey",
+          "AnalysisID": "uuid;index;not null",
+          "UserID": "uuid;index;not null",
+          "EraID": "string;not null",
+          "ImageURL": "string;not null",
+          "Format": "string;not null;default:instagram_story",
+          "ShareToken": "string;uniqueIndex;not null",
+          "ViewCount": "int;default:0",
+          "CreatedAt": "time.Time;autoCreateTime"
+        },
+        "relations": {
+          "EraAnalysis": "belongsTo EraAnalysis via AnalysisID",
+          "User": "belongsTo User"
+        },
+        "notes": "Format enum: instagram_story (1080x1920), tiktok (1080x1920), square (1080x1080). ShareToken is a short unique ID for public sharing URLs."
+      },
+      {
+        "name": "Report",
+        "table": "reports",
+        "fields": {
+          "ID": "uuid;default:gen_random_uuid();primaryKey",
+          "ReporterID": "uuid;index;not null",
+          "ReportedUserID": "uuid;index",
+          "ReportedContentID": "uuid",
+          "ContentType": "string;not null",
+          "Reason": "string;not null",
+          "Description": "text",
+          "Status": "string;not null;default:pending",
+          "ReviewedBy": "uuid",
+          "ReviewedAt": "time.Time",
+          "CreatedAt": "time.Time;autoCreateTime",
+          "UpdatedAt": "time.Time;autoUpdateTime",
+          "DeletedAt": "gorm.DeletedAt;index"
+        },
+        "notes": "ContentType enum: share_card, user_profile. Status enum: pending, reviewed, actioned, dismissed."
+      },
+      {
+        "name": "Block",
+        "table": "blocks",
+        "fields": {
+          "ID": "uuid;default:gen_random_uuid();primaryKey",
+          "BlockerID": "uuid;index;not null",
+          "BlockedID": "uuid;index;not null",
+          "CreatedAt": "time.Time;autoCreateTime",
+          "DeletedAt": "gorm.DeletedAt;index"
+        },
+        "notes": "Unique index on BlockerID+BlockedID."
+      }
+    ],
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/api/health",
+        "description": "Health check returning server status, database connectivity, and version. Response: {status: 'ok', database: 'connected', version: '1.0.0', timestamp: ISO8601}",
+        "auth_required": false,
+        "request_body": null,
+        "response_body": "{\"status\": \"ok\", \"database\": \"connected\", \"version\": \"1.0.0\", \"timestamp\": \"2026-02-14T12:00:00Z\"}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/register",
+        "description": "Register new user with email and password. Validates email format and password minimum 8 chars. Returns access token (15min) and refresh token (7d). Auto-migrates guest analyses if guest_user_id provided.",
+        "auth_required": false,
+        "request_body": "{\"email\": \"string, required\", \"password\": \"string, required, min 8\", \"display_name\": \"string, optional\", \"guest_user_id\": \"uuid, optional — migrates guest analyses to new account\"}",
+        "response_body": "{\"user\": {\"id\": \"uuid\", \"email\": \"string\", \"display_name\": \"string\"}, \"access_token\": \"string\", \"refresh_token\": \"string\", \"expires_in\": 900}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "description": "Authenticate with email and password. Returns JWT access token (15min) and refresh token (7d).",
+        "auth_required": false,
+        "request_body": "{\"email\": \"string, required\", \"password\": \"string, required\"}",
+        "response_body": "{\"user\": {\"id\": \"uuid\", \"email\": \"string\", \"display_name\": \"string\"}, \"access_token\": \"string\", \"refresh_token\": \"string\", \"expires_in\": 900}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/apple",
+        "description": "Sign in with Apple. Validates identity token with Apple's public keys. Creates user on first sign-in or returns existing user. Migrates guest analyses if guest_user_id provided.",
+        "auth_required": false,
+        "request_body": "{\"identity_token\": \"string, required — Apple JWT\", \"authorization_code\": \"string, required\", \"full_name\": \"string, optional — only sent on first auth\", \"guest_user_id\": \"uuid, optional\"}",
+        "response_body": "{\"user\": {\"id\": \"uuid\", \"email\": \"string\", \"display_name\": \"string\"}, \"access_token\": \"string\", \"refresh_token\": \"string\", \"expires_in\": 900, \"is_new_user\": true}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/refresh",
+        "description": "Exchange a valid refresh token for a new access token and refresh token (rotation). Old refresh token is invalidated.",
+        "auth_required": false,
+        "request_body": "{\"refresh_token\": \"string, required\"}",
+        "response_body": "{\"access_token\": \"string\", \"refresh_token\": \"string\", \"expires_in\": 900}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/guest",
+        "description": "Create a temporary guest user for 3 free analyses. Returns a guest user with is_guest=true and JWT tokens. No email/password required.",
+        "auth_required": false,
+        "request_body": null,
+        "response_body": "{\"user\": {\"id\": \"uuid\", \"is_guest\": true, \"guest_usage_count\": 0}, \"access_token\": \"string\", \"refresh_token\": \"string\", \"expires_in\": 900}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/logout",
+        "description": "Invalidate the current refresh token.",
+        "auth_required": true,
+        "request_body": "{\"refresh_token\": \"string, required\"}",
+        "response_body": "{\"message\": \"Logged out successfully\"}"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/auth/account",
+        "description": "Delete user account and all associated data (analyses, share cards, daily energies, subscriptions). Requires password confirmation for email users. Apple users skip password. Guideline 5.1.1 compliance.",
+        "auth_required": true,
+        "request_body": "{\"password\": \"string, required for email users, omit for Apple users\"}",
+        "response_body": "{\"message\": \"Account deleted successfully\"}"
+      },
+      {
+        "method": "GET",
+        "path": "/api/eras",
+        "description": "Get all 12 era profiles with full details (fashion guide, music playlist, color palette, cultural context). Cached response, rarely changes. Guest-accessible for result display.",
+        "auth_required": false,
+        "request_body": null,
+        "response_body": "{\"eras\": [{\"id\": \"string\", \"name\": \"string\", \"tagline\": \"string\", \"description\": \"string\", \"time_period\": \"string\", \"fashion_guide\": {\"essentials\": [], \"brands\": [], \"styling_tips\": []}, \"music_playlist\": {\"spotify_deep_link\": \"string\", \"tracks\": [{\"artist\": \"string\", \"title\": \"string\", \"spotify_uri\": \"string\"}]}, \"color_palette\": {\"primary\": \"#hex\", \"secondary\": \"#hex\", \"accent\": \"#hex\", \"background\": \"#hex\", \"text\": \"#hex\"}, \"cultural_context\": \"string\", \"icon_emoji\": \"string\"}]}"
+      },
+      {
+        "method": "GET",
+        "path": "/api/eras/:era_id",
+        "description": "Get a single era profile by ID. Returns 404 if era doesn't exist.",
+        "auth_required": false,
+        "request_body": null,
+        "response_body": "{\"era\": {\"id\": \"string\", \"name\": \"string\", \"tagline\": \"string\", \"description\": \"string\", \"time_period\": \"string\", \"fashion_guide\": {}, \"music_playlist\": {}, \"color_palette\": {}, \"cultural_context\": \"string\", \"icon_emoji\": \"string\"}}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/analysis",
+        "description": "Submit era analysis results. Client performs on-device selfie color extraction and quiz; sends extracted data for server-side hybrid scoring against 12 era profiles. For guest users, increments guest_usage_count and rejects if count >= 3 with upgrade prompt. Returns matched era with confidence score and scoring breakdown.",
+        "auth_required": true,
+        "request_body": "{\"selfie_colors\": {\"skin_tone\": \"string (hex)\", \"eye_color\": \"string (hex)\", \"dominant_colors\": [\"#hex\"], \"clothing_colors\": [\"#hex\"], \"background_colors\": [\"#hex\"]}, \"quiz_answers\": {\"music_taste\": \"string — one of: classical, jazz, rock_n_roll, disco, synthpop, grunge, pop_punk, indie, folk, electronic\", \"fashion_pref\": \"string — one of: corsets_lace, flapper_glam, leather_denim, mod_mini, bell_bottoms, neon_bold, flannel_ripped, low_rise_glitter, vintage_mix, cottagecore_soft\", \"ideal_weekend\": \"string — one of: museum_tea, speakeasy_dance, road_trip, art_gallery, roller_disco, arcade_neon, record_store, beach_rave, farmers_market, library_cafe\", \"color_palette_choice\": \"string — one of: burgundy_gold, black_silver, pastel_pink, earth_tones, neon_green, deep_purple, baby_blue, hot_pink, sage_cream, chrome_blue\", \"decade_vibe\": \"string — one of: 1890s, 1920s, 1950s, 1960s, 1970s, 1980s, 1990s, 2000s, 2010s, 2030s\"}}",
+        "response_body": "{\"analysis\": {\"id\": \"uuid\", \"primary_era\": {\"id\": \"string\", \"name\": \"string\", \"tagline\": \"string\", \"confidence\": 0.87}, \"secondary_era\": {\"id\": \"string\", \"name\": \"string\", \"confidence\": 0.62}, \"scoring_breakdown\": {\"selfie_weight\": 0.4, \"quiz_weight\": 0.6, \"era_scores\": {\"victorian\": 0.23, \"art_deco\": 0.45}}, \"share_card_url\": \"string or null\"}, \"guest_usage\": {\"count\": 1, \"remaining\": 2, \"limit\": 3}}"
+      },
+      {
+        "method": "GET",
+        "path": "/api/analysis/history",
+        "description": "Get user's era analysis timeline sorted by date descending. Shows evolution of era results over time. Supports pagination.",
+        "auth_required": true,
+        "request_body": null,
+        "response_body": "{\"analyses\": [{\"id\": \"uuid\", \"primary_era_id\": \"string\", \"primary_era_name\": \"string\", \"secondary_era_id\": \"string\", \"confidence_score\": 0.87, \"created_at\": \"ISO8601\"}], \"pagination\": {\"page\": 1, \"per_page\": 20, \"total\": 45, \"has_more\": true}}"
+      },
+      {
+        "method": "GET",
+        "path": "/api/analysis/:analysis_id",
+        "description": "Get full details of a specific analysis including selfie colors, quiz answers, scoring breakdown, and share card URL. Only accessible by the analysis owner.",
+        "auth_required": true,
+        "request_body": null,
+        "response_body": "{\"analysis\": {\"id\": \"uuid\", \"primary_era\": {\"id\": \"string\", \"name\": \"string\", \"tagline\": \"string\", \"confidence\": 0.87, \"fashion_guide\": {}, \"music_playlist\": {}, \"color_palette\": {}, \"cultural_context\": \"string\"}, \"secondary_era\": {\"id\": \"string\", \"name\": \"string\", \"confidence\": 0.62}, \"selfie_colors\": {}, \"quiz_answers\": {}, \"scoring_breakdown\": {}, \"share_card_url\": \"string\", \"created_at\": \"ISO8601\"}}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/analysis/:analysis_id/share-card",
+        "description": "Generate a shareable era portrait card for the given analysis. Creates an image using the era-specific template with user's result data. Returns URLs for Instagram Story (1080x1920) and square (1080x1080) formats. Premium feature — requires active subscription or guest with remaining uses.",
+        "auth_required": true,
+        "request_body": "{\"format\": \"string — one of: instagram_story, tiktok, square. Default: instagram_story\"}",
+        "response_body": "{\"share_card\": {\"id\": \"uuid\", \"image_url\": \"string\", \"share_url\": \"string — public URL with share_token\", \"share_token\": \"string\", \"format\": \"string\"}}"
+      },
+      {
+        "method": "GET",
+        "path": "/api/share/:share_token",
+        "description": "Public endpoint to view a shared era result card. Increments view count. No authentication required. Used for social media link previews and shared result pages.",
+        "auth_required": false,
+        "request_body": null,
+        "response_body": "{\"share_card\": {\"image_url\": \"string\", \"era\": {\"id\": \"string\", \"name\": \"string\", \"tagline\": \"string\", \"color_palette\": {}}, \"view_count\": 42, \"created_at\": \"ISO8601\"}}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/daily-energy",
+        "description": "Submit daily mood selection to receive an era-themed energy reading. One per day per user. Maps mood to a relevant era energy with message and tip. Quick re-engagement hook for daily opens.",
+        "auth_required": true,
+        "request_body": "{\"mood\": \"string, required — one of: energized, calm, creative, nostalgic, bold, dreamy\"}",
+        "response_body": "{\"energy\": {\"id\": \"uuid\", \"mood\": \"string\", \"era_energy\": {\"id\": \"string\", \"name\": \"string\", \"icon_emoji\": \"string\", \"color_palette\": {}}, \"message\": \"string — era-themed motivational message\", \"tip\": \"string — actionable era-inspired tip for the day\", \"date\": \"2026-02-14\"}, \"already_submitted_today\": false}"
+      },
+      {
+        "method": "GET",
+        "path": "/api/daily-energy/history",
+        "description": "Get user's daily energy history for the past 30 days. Shows mood patterns and era energy assignments over time.",
+        "auth_required": true,
+        "request_body": null,
+        "response_body": "{\"energies\": [{\"id\": \"uuid\", \"mood\": \"string\", \"era_energy_id\": \"string\", \"era_energy_name\": \"string\", \"message\": \"string\", \"date\": \"2026-02-14\"}], \"streak\": {\"current\": 5, \"longest\": 12}}"
+      },
+      {
+        "method": "GET",
+        "path": "/api/user/profile",
+        "description": "Get current user's profile including subscription status, total analyses count, current streak, and most frequent era.",
+        "auth_required": true,
+        "request_body": null,
+        "response_body": "{\"user\": {\"id\": \"uuid\", \"email\": \"string\", \"display_name\": \"string\", \"avatar_url\": \"string\", \"is_guest\": false, \"guest_usage_count\": 0, \"created_at\": \"ISO8601\"}, \"stats\": {\"total_analyses\": 12, \"most_frequent_era\": {\"id\": \"string\", \"name\": \"string\", \"count\": 5}, \"daily_energy_streak\": 7, \"share_cards_created\": 3}, \"subscription\": {\"status\": \"active\", \"product_id\": \"monthly_premium\", \"expires_at\": \"ISO8601\"}}"
+      },
+      {
+        "method": "PUT",
+        "path": "/api/user/profile",
+        "description": "Update user's display name and avatar URL.",
+        "auth_required": true,
+        "request_body": "{\"display_name\": \"string, optional\", \"avatar_url\": \"string, optional\"}",
+        "response_body": "{\"user\": {\"id\": \"uuid\", \"email\": \"string\", \"display_name\": \"string\", \"avatar_url\": \"string\"}}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/reports",
+        "description": "Report inappropriate content (share cards or user profiles). Guideline 1.2 compliance for UGC safety.",
+        "auth_required": true,
+        "request_body": "{\"reported_user_id\": \"uuid, optional\", \"reported_content_id\": \"uuid, optional\", \"content_type\": \"string — share_card or user_profile\", \"reason\": \"string — inappropriate, spam, offensive, other\", \"description\": \"string, optional — additional details\"}",
+        "response_body": "{\"report\": {\"id\": \"uuid\", \"status\": \"pending\", \"created_at\": \"ISO8601\"}, \"message\": \"Report submitted. We'll review it within 24 hours.\"}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/blocks",
+        "description": "Block a user. Blocked user's share cards won't appear in any shared views for the blocker.",
+        "auth_required": true,
+        "request_body": "{\"blocked_user_id\": \"uuid, required\"}",
+        "response_body": "{\"block\": {\"id\": \"uuid\", \"blocked_user_id\": \"uuid\"}, \"message\": \"User blocked successfully\"}"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/blocks/:block_id",
+        "description": "Unblock a previously blocked user.",
+        "auth_required": true,
+        "request_body": null,
+        "response_body": "{\"message\": \"User unblocked successfully\"}"
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/moderation/reports",
+        "description": "List all pending reports for admin review. Supports filtering by status and content_type. Admin-only endpoint.",
+        "auth_required": true,
+        "request_body": null,
+        "response_body": "{\"reports\": [{\"id\": \"uuid\", \"reporter_id\": \"uuid\", \"reported_user_id\": \"uuid\", \"content_type\": \"string\", \"reason\": \"string\", \"description\": \"string\", \"status\": \"pending\", \"created_at\": \"ISO8601\"}], \"pagination\": {\"page\": 1, \"per_page\": 50, \"total\": 3}}"
+      },
+      {
+        "method": "PUT",
+        "path": "/api/admin/moderation/reports/:report_id",
+        "description": "Review and action a report. Admin can dismiss, warn user, or remove content.",
+        "auth_required": true,
+        "request_body": "{\"action\": \"string — dismiss, warn, remove_content, ban_user\", \"notes\": \"string, optional\"}",
+        "response_body": "{\"report\": {\"id\": \"uuid\", \"status\": \"actioned\", \"reviewed_by\": \"uuid\", \"reviewed_at\": \"ISO8601\"}}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/webhooks/revenuecat",
+        "description": "RevenueCat webhook handler for subscription lifecycle events. Validates webhook authorization header. Handles events: INITIAL_PURCHASE, RENEWAL, CANCELLATION, EXPIRATION, BILLING_ISSUE_DETECTED, SUBSCRIBER_ALIAS. Updates subscription status in database accordingly.",
+        "auth_required": false,
+        "request_body": "RevenueCat webhook payload — see RevenueCat docs. Key fields: event.type, event.app_user_id, event.product_id, event.expiration_at_ms, event.environment",
+        "response_body": "{\"status\": \"ok\"}"
+      }
+    ],
+    "services": [
+      "AuthService: Handles user registration (email+password with bcrypt hashing), login (credential validation + JWT generation), Apple Sign-In (Apple identity token verification against Apple's JWKS at https://appleid.apple.com/auth/keys, extracts email and sub claim), guest user creation (creates user with is_guest=true, no credentials required), token refresh with rotation (invalidates old refresh token, issues new pair), logout (soft-deletes refresh token), and account deletion (cascading soft-delete of all user data including analyses, share cards, daily energies, subscriptions). JWT access tokens expire in 15 minutes with claims: sub (user_id), email, is_guest, iat, exp. Refresh tokens expire in 7 days. Guest-to-registered migration: when guest_user_id is provided during register/apple, reassigns all EraAnalysis and DailyEraEnergy records from guest user to new user, then soft-deletes guest account.",
+      "EraService: Manages the 12 static era profiles. Seeds database on startup with all era data (victorian, art_deco, rockabilly_50s, mod_60s, disco_70s, new_wave_80s, grunge_90s, y2k, indie_2010s, cottagecore, dark_academia, cyber_futurist). Each era has pre-defined color mapping weights for selfie scoring, quiz answer mappings, fashion guide, Spotify playlist with deep links, and cultural context text. GetAll returns all eras sorted by sort_order. GetByID returns single era or 404. Era data is cached in-memory after first load since it changes only on deployment.",
+      "AnalysisService: Core scoring engine. SubmitAnalysis receives selfie color data and quiz answers, then runs hybrid scoring algorithm: (1) Selfie scoring (40% weight) — maps extracted colors against each era's characteristic palette using color distance calculation (CIE2000 or simplified Euclidean in LAB space), skin tone warmth/coolness mapping, clothing color era affinity; (2) Quiz scoring (60% weight) — each quiz answer maps to era affinity scores defined in EraProfile quiz mappings, summed and normalized; (3) Combined score = 0.4 * selfie_score + 0.6 * quiz_score for each era; primary era = highest combined score, secondary era = second highest. Guest usage gating: checks user.GuestUsageCount against limit of 3, returns 403 with upgrade_required if exceeded, increments count on success. Stores full scoring breakdown in JSONB for result screen display. GetHistory returns paginated analyses sorted by created_at DESC. GetByID returns full analysis detail with era profile data joined.",
+      "ShareCardService: Generates shareable era portrait cards. GenerateCard takes an analysis ID and format (instagram_story 1080x1920, tiktok 1080x1920, square 1080x1080), creates a card image using the era-specific template with overlaid result data (era name, confidence %, user name, color palette background). Image generation uses Go's image/draw package with pre-loaded era template PNGs. Uploads generated image to local storage or S3-compatible bucket. Creates ShareCard record with unique share_token (8-char nanoid). GetByShareToken is the public endpoint — returns card data without auth, increments view_count atomically. Premium gating: share card generation requires active subscription OR guest with remaining uses (count < 3).",
+      "DailyEnergyService: Manages daily era energy readings for re-engagement. SubmitMood takes user's mood selection (energized/calm/creative/nostalgic/bold/dreamy) and maps it to an era energy using a deterministic mapping with daily rotation (mood + day_of_year modulo creates variety). Each mood maps to 2-3 possible eras: energized→disco_70s/new_wave_80s, calm→cottagecore/victorian, creative→art_deco/indie_2010s, nostalgic→rockabilly_50s/grunge_90s, bold→cyber_futurist/mod_60s, dreamy→y2k/dark_academia. Returns era-themed motivational message and actionable tip. Enforces one entry per user per day (unique constraint on user_id + date). GetHistory returns last 30 days of entries. Calculates current streak (consecutive days with entries) and longest streak.",
+      "SubscriptionService: Manages premium subscription state. HandleWebhook processes RevenueCat webhook events: INITIAL_PURCHASE creates/updates subscription record with product_id and expiration, RENEWAL extends expiration, CANCELLATION sets status to cancelled (still active until expiration), EXPIRATION sets status to expired, BILLING_ISSUE_DETECTED sets status to billing_retry. Validates webhook via Authorization header matching configured secret. IsSubscribed checks if user has an active subscription (status=active AND expires_at > now). GetSubscription returns current subscription details for profile display.",
+      "ModerationService: Handles content reporting and blocking for App Store Guideline 1.2 compliance. CreateReport validates content type and reason, creates report record. CreateBlock adds user to blocker's block list with unique constraint. DeleteBlock removes block. GetPendingReports (admin) returns filtered, paginated reports. ActionReport (admin) updates report status and records reviewer. All moderation queries filter out content from blocked users in relevant list endpoints.",
+      "SeedService: Runs on application startup. Seeds the era_profiles table with all 12 era definitions if they don't exist (upsert by ID). Era seed data includes complete fashion guides, Spotify playlist data with deep links, hex color palettes, cultural context paragraphs, and card template references. Idempotent — safe to run on every deployment."
+    ]
+  },
+  "monetization_model": "Freemium with contextual paywall. Free tier: 3 full era analyses, daily energy reading, basic sharing with watermark. Premium ($4.99/month or $29.99/year): unlimited analyses, all 12 era deep-dive profiles, premium portrait card templates, era wardrobe recommendations, no watermark on shares. One-time era pack purchases ($1.99 each) for users who don't want subscriptions.",
+  "subscription_tiers": [
+    {
+      "name": "Free",
+      "price": "0",
+      "features": [
+        "3 uses/day",
+        "Basic features",
+        "Ads"
+      ]
+    },
+    {
+      "name": "Premium",
+      "price": "$4.99/month",
+      "features": [
+        "Unlimited",
+        "All features",
+        "No ads"
+      ]
+    },
+    {
+      "name": "Annual",
+      "price": "$39.99/year",
+      "features": [
+        "All Premium",
+        "33% savings"
+      ]
+    }
+  ],
+  "tech_stack": {
+    "mobile": "Expo SDK 54 + React Native 0.81 + NativeWind v4 + Expo Router v6",
+    "backend": "Go-Fiber v2 + GORM + PostgreSQL",
+    "auth": "JWT + Sign in with Apple",
+    "payments": "RevenueCat",
+    "deployment": "Coolify PaaS",
+    "ci_cd": "EAS Build + Fastlane"
+  },
+  "apple_compliance": [
+    "4.8 Sign in with Apple",
+    "5.1.1 Account Deletion",
+    "1.2 UGC Safety (Report + Block)",
+    "3.1.1 IAP via RevenueCat",
+    "5.1 Privacy Policy"
+  ],
+  "generated_at": "2026-02-14T12:25:15.743196+00:00",
+  "pipeline_version": "1.0.0"
+}

@@ -19,6 +19,9 @@ type Config struct {
 
 	RevenueCatWebhookAuth string
 
+	AIAPIURL string
+	AIAPIKey string
+
 	Port        string
 	CORSOrigins string
 }
@@ -37,6 +40,9 @@ func Load() *Config {
 		JWTRefreshExpiry: parseDuration(getEnv("JWT_REFRESH_EXPIRY", "168h")),
 
 		RevenueCatWebhookAuth: getEnv("REVENUECAT_WEBHOOK_AUTH", ""),
+
+		AIAPIURL: getEnv("AI_API_URL", "https://api.z.ai/api/paas/v4/chat/completions"),
+		AIAPIKey: getEnv("AI_API_KEY", ""),
 
 		Port:        getEnv("PORT", "8080"),
 		CORSOrigins: getEnv("CORS_ORIGINS", "*"),
