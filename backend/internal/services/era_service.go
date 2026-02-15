@@ -3,11 +3,28 @@ package services
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/ahmetcoskunkizilkaya/EraCheck/backend/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+// EraScore represents an era with its calculated score.
+type EraScore struct {
+	Era        string  `json:"era"`
+	Score      float64 `json:"score"`
+	Percentage int     `json:"percentage"`
+}
+
+// QuizResultResponse contains the full quiz result with top 3 eras.
+type QuizResultResponse struct {
+	PrimaryEra     EraScore   `json:"primary_era"`
+	TopEras        []EraScore `json:"top_eras"`
+	TotalQuestions int        `json:"total_questions"`
+}
 
 // EraService handles business logic related to eras, quizzes, and user stats.
 type EraService struct {
@@ -26,11 +43,18 @@ func (s *EraService) GetQuizQuestions() ([]models.EraQuiz, error) {
 	return questions, err
 }
 
-// SubmitQuizAnswers processes the user's quiz answers and returns the determined era result.
+// SubmitQuizAnswers processes the user's quiz answers with weighted scoring.
 // answers is a map of questionID -> optionIndex.
+// Returns the EraResult (saved to DB) and a QuizResultResponse with top 3 eras.
 func (s *EraService) SubmitQuizAnswers(userID uuid.UUID, answers map[string]int) (*models.EraResult, error) {
-	// Score each era based on answers
-	eraScores := make(map[string]int)
+	if len(answers) == 0 {
+		return nil, errors.New("no answers provided")
+	}
+
+	// Map to store weighted scores per era
+	eraScores := make(map[string]float64)
+	// Track total weight applied for normalization
+	totalWeightApplied := 0.0
 
 	for questionID, optionIndex := range answers {
 		qID, err := uuid.Parse(questionID)
@@ -43,6 +67,10 @@ func (s *EraService) SubmitQuizAnswers(userID uuid.UUID, answers map[string]int)
 			continue
 		}
 
+		// Get category weight
+		categoryWeight := GetCategoryWeight(question.Category)
+		totalWeightApplied += categoryWeight
+
 		// Parse options JSON
 		var options []QuizOption
 		if err := json.Unmarshal(question.Options, &options); err != nil {
@@ -50,27 +78,65 @@ func (s *EraService) SubmitQuizAnswers(userID uuid.UUID, answers map[string]int)
 		}
 
 		if optionIndex >= 0 && optionIndex < len(options) {
-			eraScores[options[optionIndex].Era]++
+			selectedEra := options[optionIndex].Era
+			if selectedEra != "" {
+				eraScores[selectedEra] += categoryWeight
+			}
 		}
 	}
 
-	// Find the winning era
-	bestEra := "2022_clean_girl" // default
-	bestScore := 0
+	// Calculate total possible weighted points
+	if totalWeightApplied == 0 {
+		totalWeightApplied = 1.0 // avoid division by zero
+	}
+
+	// Convert map to slice for sorting
+	var eraScoreList []EraScore
 	for era, score := range eraScores {
-		if score > bestScore {
-			bestScore = score
-			bestEra = era
+		percentage := int((score / totalWeightApplied) * 100)
+		if percentage > 100 {
+			percentage = 100
 		}
+		if percentage < 1 && score > 0 {
+			percentage = 1
+		}
+		eraScoreList = append(eraScoreList, EraScore{
+			Era:        era,
+			Score:      score,
+			Percentage: percentage,
+		})
 	}
 
+	// Sort by score descending
+	sort.Slice(eraScoreList, func(i, j int) bool {
+		return eraScoreList[i].Score > eraScoreList[j].Score
+	})
+
+	// Ensure we have at least 3 entries
+	for len(eraScoreList) < 3 {
+		eraScoreList = append(eraScoreList, EraScore{Era: "", Score: 0, Percentage: 0})
+	}
+
+	// Take top 3
+	topEras := eraScoreList[:3]
+	topEras = normalizePercentages(topEras)
+
+	// Get best era profile
+	bestEra := topEras[0].Era
+	if bestEra == "" {
+		bestEra = "2022_clean_girl"
+	}
 	profile, ok := GetEraProfile(bestEra)
 	if !ok {
 		profile = EraProfiles["2022_clean_girl"]
+		bestEra = "2022_clean_girl"
 	}
 
-	// Build scores JSON
-	scoresJSON, _ := json.Marshal(eraScores)
+	// Build scores JSON with weighted values
+	scoresJSON, _ := json.Marshal(map[string]interface{}{
+		"weighted_scores": eraScores,
+		"top_eras":        formatTopEras(topEras),
+	})
 
 	result := &models.EraResult{
 		UserID:         userID,
@@ -90,6 +156,69 @@ func (s *EraService) SubmitQuizAnswers(userID uuid.UUID, answers map[string]int)
 	}
 
 	return result, nil
+}
+
+// GetTopErasForResult computes top 3 era scores from a stored result's scores JSON.
+func GetTopErasForResult(scoresJSON []byte) []EraScore {
+	var data map[string]interface{}
+	if err := json.Unmarshal(scoresJSON, &data); err != nil {
+		return nil
+	}
+
+	topStr, ok := data["top_eras"].(string)
+	if !ok || topStr == "" {
+		return nil
+	}
+
+	return parseTopEras(topStr)
+}
+
+// normalizePercentages adjusts percentages to sum to 100.
+func normalizePercentages(eras []EraScore) []EraScore {
+	if len(eras) == 0 {
+		return eras
+	}
+
+	total := 0
+	for _, e := range eras {
+		total += e.Percentage
+	}
+
+	if total == 100 || total == 0 {
+		return eras
+	}
+
+	// Adjust the largest era to make total 100
+	diff := 100 - total
+	eras[0].Percentage += diff
+	if eras[0].Percentage < 0 {
+		eras[0].Percentage = 0
+	}
+
+	return eras
+}
+
+// formatTopEras converts EraScore slice to string for storage.
+func formatTopEras(eras []EraScore) string {
+	parts := make([]string, len(eras))
+	for i, e := range eras {
+		parts[i] = fmt.Sprintf("%s:%d", e.Era, e.Percentage)
+	}
+	return strings.Join(parts, ",")
+}
+
+// parseTopEras converts a stored string back to EraScore slice.
+func parseTopEras(s string) []EraScore {
+	var result []EraScore
+	for _, part := range strings.Split(s, ",") {
+		pieces := strings.SplitN(part, ":", 2)
+		if len(pieces) == 2 {
+			var pct int
+			fmt.Sscanf(pieces[1], "%d", &pct)
+			result = append(result, EraScore{Era: pieces[0], Percentage: pct})
+		}
+	}
+	return result
 }
 
 // GetUserResults retrieves all quiz results for a user.

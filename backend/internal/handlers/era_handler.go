@@ -30,7 +30,7 @@ func (h *EraHandler) GetQuestions(c *fiber.Ctx) error {
 	})
 }
 
-// SubmitQuiz processes user answers and returns the result
+// SubmitQuiz processes user answers and returns the result with top 3 eras
 func (h *EraHandler) SubmitQuiz(c *fiber.Ctx) error {
 	userIDStr := c.Locals("userID").(string)
 	userID, err := uuid.Parse(userIDStr)
@@ -66,12 +66,18 @@ func (h *EraHandler) SubmitQuiz(c *fiber.Ctx) error {
 		})
 	}
 
-	// Enrich result with profile data
+	// Enrich result with profile data and top eras
 	response := fiber.Map{
 		"result": result,
 	}
 	if profile, ok := services.EraProfiles[result.Era]; ok {
 		response["profile"] = profile
+	}
+
+	// Include top eras from scores JSON
+	topEras := services.GetTopErasForResult(result.Scores)
+	if topEras != nil {
+		response["top_eras"] = topEras
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
