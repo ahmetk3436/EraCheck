@@ -22,6 +22,8 @@ type Config struct {
 	AIAPIURL string
 	AIAPIKey string
 
+	AppleBundleID string
+
 	Port        string
 	CORSOrigins string
 }
@@ -43,6 +45,8 @@ func Load() *Config {
 
 		AIAPIURL: getEnv("AI_API_URL", "https://api.z.ai/api/paas/v4/chat/completions"),
 		AIAPIKey: getEnv("AI_API_KEY", ""),
+
+		AppleBundleID: getEnv("APPLE_BUNDLE_ID", ""),
 
 		Port:        getEnv("PORT", "8080"),
 		CORSOrigins: getEnv("CORS_ORIGINS", "*"),

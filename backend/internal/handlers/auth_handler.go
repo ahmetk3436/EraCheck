@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/ahmetcoskunkizilkaya/EraCheck/backend/internal/dto"
 	"github.com/ahmetcoskunkizilkaya/EraCheck/backend/internal/services"
@@ -132,12 +133,17 @@ func (h *AuthHandler) DeleteAccount(c *fiber.Ctx) error {
 	if err := h.authService.DeleteAccount(userID, req.Password); err != nil {
 		if errors.Is(err, services.ErrInvalidCredentials) {
 			return c.Status(fiber.StatusUnauthorized).JSON(dto.ErrorResponse{
-				Error: true, Message: "Incorrect password",
+				Error: true, Message: "Incorrect password. Please try again.",
 			})
 		}
 		if errors.Is(err, services.ErrUserNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(dto.ErrorResponse{
 				Error: true, Message: "User not found",
+			})
+		}
+		if strings.Contains(err.Error(), "password is required") {
+			return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+				Error: true, Message: "Password is required",
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
@@ -154,6 +160,12 @@ func (h *AuthHandler) AppleSignIn(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
 			Error: true, Message: "Invalid request body",
+		})
+	}
+
+	if req.IdentityToken == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error: true, Message: "Identity token is required",
 		})
 	}
 

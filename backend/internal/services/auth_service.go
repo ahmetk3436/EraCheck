@@ -4,9 +4,9 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -27,12 +27,17 @@ var (
 )
 
 type AuthService struct {
-	db  *gorm.DB
-	cfg *config.Config
+	db        *gorm.DB
+	cfg       *config.Config
+	appleJWKS *AppleJWKSClient
 }
 
 func NewAuthService(db *gorm.DB, cfg *config.Config) *AuthService {
-	return &AuthService{db: db, cfg: cfg}
+	return &AuthService{
+		db:        db,
+		cfg:       cfg,
+		appleJWKS: NewAppleJWKSClient(),
+	}
 }
 
 func (s *AuthService) Register(req *dto.RegisterRequest) (*dto.AuthResponse, error) {
@@ -51,9 +56,10 @@ func (s *AuthService) Register(req *dto.RegisterRequest) (*dto.AuthResponse, err
 	}
 
 	user := models.User{
-		ID:       uuid.New(),
-		Email:    req.Email,
-		Password: string(hash),
+		ID:           uuid.New(),
+		Email:        req.Email,
+		Password:     string(hash),
+		AuthProvider: "email",
 	}
 
 	if err := s.db.Create(&user).Error; err != nil {
@@ -115,12 +121,16 @@ func (s *AuthService) DeleteAccount(userID uuid.UUID, password string) error {
 		return ErrUserNotFound
 	}
 
-	// Verify password (skip for Apple Sign-In users who have no password)
-	if user.Password != "" && password != "" {
+	// For non-Apple users, verify password
+	if user.AuthProvider != "apple" {
+		if password == "" {
+			return errors.New("password is required")
+		}
 		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 			return ErrInvalidCredentials
 		}
 	}
+	// Apple users skip password verification (they authenticated via Apple)
 
 	// Scrub all associated data in a transaction
 	return s.db.Transaction(func(tx *gorm.DB) error {
@@ -142,58 +152,61 @@ func (s *AuthService) DeleteAccount(userID uuid.UUID, password string) error {
 }
 
 // AppleSignIn handles Sign in with Apple (Guideline 4.8).
-// Verifies Apple identity token and creates/finds a user.
+// Verifies Apple identity token signature against Apple's JWKS and creates/finds a user.
 func (s *AuthService) AppleSignIn(req *dto.AppleSignInRequest) (*dto.AuthResponse, error) {
-	// Decode the Apple identity token to extract the subject (Apple user ID)
-	// In production, verify the token signature against Apple's public keys at:
-	// https://appleid.apple.com/auth/keys
-	parts := strings.Split(req.IdentityToken, ".")
-	if len(parts) != 3 {
-		return nil, errors.New("invalid Apple identity token format")
+	if req.IdentityToken == "" {
+		return nil, errors.New("identity token is required")
 	}
 
-	// Decode the payload (base64url)
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	// Verify the identity token with Apple's JWKS
+	claims, err := s.appleJWKS.VerifyToken(req.IdentityToken, s.cfg.AppleBundleID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode Apple token payload: %w", err)
+		log.Printf("Apple token verification failed: %v", err)
+		return nil, fmt.Errorf("failed to verify Apple identity token: %w", err)
 	}
 
-	var claims struct {
-		Sub   string `json:"sub"`
-		Email string `json:"email"`
-	}
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return nil, fmt.Errorf("failed to parse Apple token claims: %w", err)
-	}
-
-	if claims.Sub == "" {
-		return nil, errors.New("Apple token missing subject")
-	}
+	// Extract user info from verified claims
+	appleUserID := claims.Sub
+	email := claims.Email
 
 	// Use email from token, or from the request (first sign-in only)
-	email := claims.Email
 	if email == "" {
 		email = req.Email
 	}
 	if email == "" {
-		email = claims.Sub + "@privaterelay.appleid.com"
+		email = appleUserID + "@privaterelay.appleid.com"
 	}
 
-	// Find existing user by Apple ID (stored in email field with apple: prefix)
-	// or by email match
+	// Find existing user by Apple user ID or by email
 	var user models.User
-	appleEmail := "apple:" + claims.Sub
-	err = s.db.Where("email = ? OR email = ?", appleEmail, email).First(&user).Error
+	err = s.db.Where("apple_user_id = ? OR email = ?", appleUserID, email).First(&user).Error
 
 	if err != nil {
 		// Create new user for first-time Apple sign-in
+		displayName := req.FullName
+		if displayName == "" {
+			displayName = strings.Split(email, "@")[0]
+		}
+
 		user = models.User{
-			ID:       uuid.New(),
-			Email:    email,
-			Password: "", // Apple users have no password
+			ID:           uuid.New(),
+			Email:        email,
+			Password:     "", // Apple users have no password
+			AppleUserID:  &appleUserID,
+			AuthProvider: "apple",
 		}
 		if err := s.db.Create(&user).Error; err != nil {
 			return nil, fmt.Errorf("failed to create Apple user: %w", err)
+		}
+	} else {
+		// User exists — update Apple user ID if not set
+		if user.AppleUserID == nil {
+			s.db.Model(&user).Updates(map[string]interface{}{
+				"apple_user_id": appleUserID,
+				"auth_provider": "apple",
+			})
+			user.AppleUserID = &appleUserID
+			user.AuthProvider = "apple"
 		}
 	}
 
@@ -215,18 +228,20 @@ func (s *AuthService) generateTokenPair(user *models.User) (*dto.AuthResponse, e
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: dto.UserResponse{
-			ID:    user.ID,
-			Email: user.Email,
+			ID:          user.ID,
+			Email:       user.Email,
+			IsAppleUser: user.AuthProvider == "apple",
 		},
 	}, nil
 }
 
 func (s *AuthService) generateAccessToken(user *models.User) (string, error) {
 	claims := jwt.MapClaims{
-		"sub":   user.ID.String(),
-		"email": user.Email,
-		"iat":   time.Now().Unix(),
-		"exp":   time.Now().Add(s.cfg.JWTAccessExpiry).Unix(),
+		"sub":           user.ID.String(),
+		"email":         user.Email,
+		"is_apple_user": user.AuthProvider == "apple",
+		"iat":           time.Now().Unix(),
+		"exp":           time.Now().Add(s.cfg.JWTAccessExpiry).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

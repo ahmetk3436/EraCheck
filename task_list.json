@@ -28,25 +28,25 @@
       "id": "enhance_003",
       "title": "Strengthen Content Moderation with Real Profanity Filter",
       "description": "The moderation_service.go `FilterContent()` (line ~23) only checks for 'spam' and 'scam' using basic regex. This is inadequate for App Store review — Apple Guideline 1.2 requires robust content filtering.\n\n**File:** `backend/internal/services/moderation_service.go`\n\n**Current Problem:** Only 2 regex patterns: `\\b(spam|scam)\\b`. Challenge responses with profanity, slurs, or harmful content pass through unfiltered.\n\n**Implementation:**\n1. Create a comprehensive banned words list (100+ terms) covering:\n   - Profanity and slurs (common English offensive terms)\n   - Hate speech keywords\n   - Sexual content terms\n   - Violence-related terms\n   - Spam patterns (URLs, phone numbers, repeated chars)\n2. Add regex patterns for:\n   - URL detection: `https?://\\S+` or `www\\.\\S+`\n   - Email detection: `\\S+@\\S+\\.\\S+`\n   - Phone numbers: `\\d{3}[-.]?\\d{3}[-.]?\\d{4}`\n   - Repeated characters (4+): `(.)\\1{3,}`\n   - ALL CAPS text (5+ consecutive): `[A-Z]{5,}`\n3. Add a `SanitizeAndCheck(text string) (isClean bool, sanitized string, reason string)` method\n4. Integrate into `challenge_service.go` `SubmitChallengeResponse()` — call FilterContent on user response before processing\n5. Store the banned words as a `var bannedPatterns []string` slice compiled into `[]*regexp.Regexp` at init time for performance\n6. Return specific rejection reasons: 'inappropriate_language', 'spam_detected', 'url_not_allowed'\n\n**Update challenge_service.go:** Add moderation check before saving response:\n```go\nif clean, reason := s.moderationService.FilterContent(response); !clean {\n    return nil, fmt.Errorf(\"content rejected: %s\", reason)\n}\n```\n\n**Update main.go:** Pass moderationService to NewChallengeService\n\n**Test:** `cd backend \u0026\u0026 go build ./...`",
+      "status": "completed",
+      "priority": 9,
+      "depends_on": [],
+      "test_command": "cd backend \u0026\u0026 go build ./...",
+      "auto_commit": true,
+      "created_at": "",
+      "updated_at": "2026-02-15T02:16:39Z"
+    },
+    {
+      "id": "enhance_004",
+      "title": "Fix Delete Account Password Flow and Apple Token Verification",
+      "description": "Two critical auth issues: (1) Settings screen has no password input modal for delete account — it calls the API without password for authenticated users. (2) Apple Sign-In token is decoded but signature is NOT verified against Apple's JWKS.\n\n**File 1:** `mobile/app/(protected)/(tabs)/settings.tsx`\n- Add a password confirmation modal before account deletion for non-Apple users:\n  - Import Modal from `../../components/ui/Modal`\n  - Add state: `showDeleteModal`, `deletePassword`, `deleteLoading`, `deleteError`\n  - Modal content: warning icon (Ionicons 'warning'), red header text 'Delete Account', description 'This action cannot be undone. All your data will be permanently deleted.', password Input with showPasswordToggle, error text display, two buttons: Cancel (outline) and Delete (destructive variant with isLoading)\n  - On confirm: call `deleteAccount(deletePassword)` from AuthContext\n  - On success: `hapticSuccess()`, router.replace('/(auth)/login')\n  - On error: `hapticError()`, show error message in modal\n- For Apple Sign-In users (no password): show confirmation dialog with just 'Are you sure?' text, no password field\n- Add `isAppleUser` flag to AuthContext User type and check it\n\n**File 2:** `backend/internal/services/auth_service.go`\n- The `AppleSignIn()` method (line ~146) decodes the identity token JWT payload with base64 but does NOT verify the signature against Apple's JWKS endpoint (`https://appleid.apple.com/auth/keys`)\n- Add Apple JWKS verification:\n  1. Fetch Apple's public keys from `https://appleid.apple.com/auth/keys` (cache for 24h)\n  2. Parse JWT header to get `kid` (key ID)\n  3. Find matching public key from JWKS\n  4. Verify RS256 signature using `crypto/rsa` and `crypto/x509`\n  5. Verify claims: `iss` == 'https://appleid.apple.com', `aud` == app bundle ID, `exp` \u003e now\n- Add `AppleBundleID` to config.go: `envconfig:\"APPLE_BUNDLE_ID\"`\n\n**Test:** `cd backend \u0026\u0026 go build ./...`",
       "status": "in_progress",
       "priority": 9,
       "depends_on": [],
       "test_command": "cd backend \u0026\u0026 go build ./...",
       "auto_commit": true,
       "created_at": "",
-      "updated_at": "2026-02-15T02:07:09Z"
-    },
-    {
-      "id": "enhance_004",
-      "title": "Fix Delete Account Password Flow and Apple Token Verification",
-      "description": "Two critical auth issues: (1) Settings screen has no password input modal for delete account — it calls the API without password for authenticated users. (2) Apple Sign-In token is decoded but signature is NOT verified against Apple's JWKS.\n\n**File 1:** `mobile/app/(protected)/(tabs)/settings.tsx`\n- Add a password confirmation modal before account deletion for non-Apple users:\n  - Import Modal from `../../components/ui/Modal`\n  - Add state: `showDeleteModal`, `deletePassword`, `deleteLoading`, `deleteError`\n  - Modal content: warning icon (Ionicons 'warning'), red header text 'Delete Account', description 'This action cannot be undone. All your data will be permanently deleted.', password Input with showPasswordToggle, error text display, two buttons: Cancel (outline) and Delete (destructive variant with isLoading)\n  - On confirm: call `deleteAccount(deletePassword)` from AuthContext\n  - On success: `hapticSuccess()`, router.replace('/(auth)/login')\n  - On error: `hapticError()`, show error message in modal\n- For Apple Sign-In users (no password): show confirmation dialog with just 'Are you sure?' text, no password field\n- Add `isAppleUser` flag to AuthContext User type and check it\n\n**File 2:** `backend/internal/services/auth_service.go`\n- The `AppleSignIn()` method (line ~146) decodes the identity token JWT payload with base64 but does NOT verify the signature against Apple's JWKS endpoint (`https://appleid.apple.com/auth/keys`)\n- Add Apple JWKS verification:\n  1. Fetch Apple's public keys from `https://appleid.apple.com/auth/keys` (cache for 24h)\n  2. Parse JWT header to get `kid` (key ID)\n  3. Find matching public key from JWKS\n  4. Verify RS256 signature using `crypto/rsa` and `crypto/x509`\n  5. Verify claims: `iss` == 'https://appleid.apple.com', `aud` == app bundle ID, `exp` \u003e now\n- Add `AppleBundleID` to config.go: `envconfig:\"APPLE_BUNDLE_ID\"`\n\n**Test:** `cd backend \u0026\u0026 go build ./...`",
-      "status": "pending",
-      "priority": 9,
-      "depends_on": [],
-      "test_command": "cd backend \u0026\u0026 go build ./...",
-      "auto_commit": true,
-      "created_at": "",
-      "updated_at": ""
+      "updated_at": "2026-02-15T02:16:39Z"
     },
     {
       "id": "enhance_005",

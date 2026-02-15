@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useSubscription } from '../../../contexts/SubscriptionContext';
 import api from '../../../lib/api';
-import { hapticSuccess, hapticError, hapticLight } from '../../../lib/haptics';
+import Modal from '../../../components/ui/Modal';
+import Input from '../../../components/ui/Input';
+import Button from '../../../components/ui/Button';
+import { hapticSuccess, hapticError, hapticLight, hapticWarning, hapticSelection } from '../../../lib/haptics';
 
 interface FavoriteEraProfile {
   key: string;
@@ -42,6 +45,14 @@ export default function SettingsScreen() {
   const [stats, setStats] = useState<EraStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const isAppleUser = user?.isAppleUser || false;
 
   useEffect(() => {
     loadStats();
@@ -85,32 +96,57 @@ export default function SettingsScreen() {
     ]);
   };
 
-  const handleDeleteAccount = () => {
-    hapticLight();
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeleting(true);
-            try {
-              await deleteAccount();
-              hapticSuccess();
-            } catch (error: any) {
-              hapticError();
-              Alert.alert('Error', 'Failed to delete account');
-            } finally {
-              setDeleting(false);
-            }
-          },
-        },
-      ]
-    );
-  };
+  const handleDeletePress = useCallback(() => {
+    hapticWarning();
+    setDeletePassword('');
+    setDeleteError('');
+    setShowDeleteModal(true);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    hapticSelection();
+    setShowDeleteModal(false);
+    setDeletePassword('');
+    setDeleteError('');
+    setDeleteLoading(false);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    hapticSelection();
+    setDeleteError('');
+
+    // For non-Apple users, validate password
+    if (!isAppleUser) {
+      if (!deletePassword.trim()) {
+        setDeleteError('Password is required');
+        hapticError();
+        return;
+      }
+      if (deletePassword.length < 6) {
+        setDeleteError('Password must be at least 6 characters');
+        hapticError();
+        return;
+      }
+    }
+
+    setDeleteLoading(true);
+
+    try {
+      await deleteAccount(isAppleUser ? '' : deletePassword);
+      hapticSuccess();
+      setShowDeleteModal(false);
+      router.replace('/(auth)/login');
+    } catch (error: any) {
+      hapticError();
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to delete account. Please try again.';
+      setDeleteError(errorMessage);
+    } finally {
+      setDeleteLoading(false);
+    }
+  }, [deletePassword, isAppleUser, deleteAccount, router]);
 
   const handlePrivacyPolicy = () => {
     hapticLight();
@@ -328,7 +364,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={handleDeleteAccount}
+              onPress={handleDeletePress}
               disabled={deleting}
               className="bg-gray-900 rounded-xl p-4 flex-row items-center"
               style={{ borderWidth: 1, borderColor: '#7f1d1d' }}
@@ -353,6 +389,80 @@ export default function SettingsScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Delete Account Confirmation Modal */}
+      <Modal
+        visible={showDeleteModal}
+        onClose={handleCloseModal}
+        showCloseButton={false}
+        dismissOnBackdropPress={!deleteLoading}
+      >
+        {/* Warning Icon */}
+        <View className="items-center mb-4">
+          <View
+            className="w-16 h-16 rounded-full items-center justify-center"
+            style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)' }}
+          >
+            <Ionicons name="warning" size={32} color="#EF4444" />
+          </View>
+        </View>
+
+        {/* Title */}
+        <Text className="text-2xl font-bold text-white text-center mb-2">
+          Delete Account
+        </Text>
+
+        {/* Description */}
+        <Text className="text-base text-gray-400 text-center mb-6">
+          This action cannot be undone. All your data will be permanently deleted.
+        </Text>
+
+        {/* Password Input (only for non-Apple users) */}
+        {!isAppleUser && (
+          <View className="mb-4">
+            <Text className="text-sm font-medium text-gray-300 mb-2">
+              Enter your password to confirm
+            </Text>
+            <Input
+              placeholder="Password"
+              secureTextEntry
+              showPasswordToggle
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+              error={deleteError}
+            />
+          </View>
+        )}
+
+        {/* Error for Apple users */}
+        {isAppleUser && deleteError ? (
+          <View className="mb-4">
+            <Text className="text-sm text-red-500 text-center">{deleteError}</Text>
+          </View>
+        ) : null}
+
+        {/* Buttons */}
+        <View className="flex-row gap-3 mt-2">
+          <View className="flex-1">
+            <Button
+              title="Cancel"
+              variant="outline"
+              onPress={handleCloseModal}
+              disabled={deleteLoading}
+              fullWidth
+            />
+          </View>
+          <View className="flex-1">
+            <Button
+              title="Delete"
+              variant="destructive"
+              onPress={handleConfirmDelete}
+              isLoading={deleteLoading}
+              fullWidth
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

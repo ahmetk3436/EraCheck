@@ -27,8 +27,9 @@ type AuthResponse struct {
 }
 
 type UserResponse struct {
-	ID    uuid.UUID `json:"id"`
-	Email string    `json:"email"`
+	ID          uuid.UUID `json:"id"`
+	Email       string    `json:"email"`
+	IsAppleUser bool      `json:"is_apple_user"`
 }
 
 type ErrorResponse struct {

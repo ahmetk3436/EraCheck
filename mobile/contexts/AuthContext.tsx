@@ -64,7 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const { data } = await api.get('/health');
           if (data.status === 'ok') {
             const payload = JSON.parse(atob(token.split('.')[1]));
-            setUser({ id: payload.sub, email: payload.email });
+            setUser({
+              id: payload.sub,
+              email: payload.email,
+              isAppleUser: payload.is_apple_user || false,
+            });
             // If user is authenticated, clear guest mode
             setIsGuest(false);
           }
@@ -85,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
       });
       await setTokens(data.access_token, data.refresh_token);
-      setUser(data.user);
+      setUser({ ...data.user, isAppleUser: false });
       // Clear guest mode on login
       setIsGuest(false);
       await AsyncStorage.removeItem(GUEST_MODE_KEY);
@@ -105,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
       });
       await setTokens(data.access_token, data.refresh_token);
-      setUser(data.user);
+      setUser({ ...data.user, isAppleUser: false });
       // Clear guest mode on register
       setIsGuest(false);
       await AsyncStorage.removeItem(GUEST_MODE_KEY);
@@ -129,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email,
         });
         await setTokens(data.access_token, data.refresh_token);
-        setUser(data.user);
+        setUser({ ...data.user, isAppleUser: true });
         setIsGuest(false);
         await AsyncStorage.removeItem(GUEST_MODE_KEY);
         await AsyncStorage.removeItem(GUEST_USAGE_KEY);
@@ -164,16 +168,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Account deletion (Guideline 5.1.1)
   const deleteAccount = useCallback(
     async (password?: string) => {
-      await api.delete('/auth/account', {
-        data: { password: password || '' },
-      });
-      await clearTokens();
-      setUser(null);
-      setIsGuest(false);
-      await AsyncStorage.removeItem(GUEST_MODE_KEY);
-      await AsyncStorage.removeItem(GUEST_USAGE_KEY);
-      setGuestUsageCount(0);
-      hapticSuccess();
+      try {
+        await api.delete('/auth/account', {
+          data: { password: password || '' },
+        });
+        await clearTokens();
+        setUser(null);
+        setIsGuest(false);
+        await AsyncStorage.removeItem(GUEST_MODE_KEY);
+        await AsyncStorage.removeItem(GUEST_USAGE_KEY);
+        setGuestUsageCount(0);
+      } catch (err) {
+        throw err;
+      }
     },
     []
   );
