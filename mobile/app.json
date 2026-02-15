@@ -20,6 +20,9 @@
       "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSPrivacyPolicyURL": "http://89.47.113.196:8086/api/legal/privacy"
       }
     },
     "android": {

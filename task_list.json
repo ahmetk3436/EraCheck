@@ -40,25 +40,25 @@
       "id": "enhance_004",
       "title": "Fix Delete Account Password Flow and Apple Token Verification",
       "description": "Two critical auth issues: (1) Settings screen has no password input modal for delete account — it calls the API without password for authenticated users. (2) Apple Sign-In token is decoded but signature is NOT verified against Apple's JWKS.\n\n**File 1:** `mobile/app/(protected)/(tabs)/settings.tsx`\n- Add a password confirmation modal before account deletion for non-Apple users:\n  - Import Modal from `../../components/ui/Modal`\n  - Add state: `showDeleteModal`, `deletePassword`, `deleteLoading`, `deleteError`\n  - Modal content: warning icon (Ionicons 'warning'), red header text 'Delete Account', description 'This action cannot be undone. All your data will be permanently deleted.', password Input with showPasswordToggle, error text display, two buttons: Cancel (outline) and Delete (destructive variant with isLoading)\n  - On confirm: call `deleteAccount(deletePassword)` from AuthContext\n  - On success: `hapticSuccess()`, router.replace('/(auth)/login')\n  - On error: `hapticError()`, show error message in modal\n- For Apple Sign-In users (no password): show confirmation dialog with just 'Are you sure?' text, no password field\n- Add `isAppleUser` flag to AuthContext User type and check it\n\n**File 2:** `backend/internal/services/auth_service.go`\n- The `AppleSignIn()` method (line ~146) decodes the identity token JWT payload with base64 but does NOT verify the signature against Apple's JWKS endpoint (`https://appleid.apple.com/auth/keys`)\n- Add Apple JWKS verification:\n  1. Fetch Apple's public keys from `https://appleid.apple.com/auth/keys` (cache for 24h)\n  2. Parse JWT header to get `kid` (key ID)\n  3. Find matching public key from JWKS\n  4. Verify RS256 signature using `crypto/rsa` and `crypto/x509`\n  5. Verify claims: `iss` == 'https://appleid.apple.com', `aud` == app bundle ID, `exp` \u003e now\n- Add `AppleBundleID` to config.go: `envconfig:\"APPLE_BUNDLE_ID\"`\n\n**Test:** `cd backend \u0026\u0026 go build ./...`",
-      "status": "in_progress",
+      "status": "completed",
       "priority": 9,
       "depends_on": [],
       "test_command": "cd backend \u0026\u0026 go build ./...",
       "auto_commit": true,
       "created_at": "",
-      "updated_at": "2026-02-15T02:16:39Z"
+      "updated_at": "2026-02-15T02:28:51Z"
     },
     {
       "id": "enhance_005",
       "title": "Fix Hardcoded URLs and Add Real Legal Page Links in Settings",
       "description": "Settings screen has placeholder URLs for Privacy Policy and Terms of Service pointing to `example.com`. These must use the actual backend endpoints.\n\n**File:** `mobile/app/(protected)/(tabs)/settings.tsx`\n\n**Current Problem:** Lines containing privacy/terms links use hardcoded placeholder URLs like `Linking.openURL('https://example.com/privacy')` and `Linking.openURL('https://example.com/terms')`. These will cause App Store rejection.\n\n**Implementation:**\n1. Import `Linking` from 'react-native' (may already be imported)\n2. Get API base URL from the api client: `import { api } from '../../../../lib/api'`\n3. Replace privacy URL with: `${API_BASE_URL}/legal/privacy` where API_BASE_URL comes from `process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api'`\n4. Replace terms URL with: `${API_BASE_URL}/legal/terms`\n5. Add a WebView-based in-app browser modal instead of external Linking:\n   - Use react-native Modal + a ScrollView that fetches HTML from the API\n   - Add state: `showLegalModal`, `legalContent`, `legalTitle`, `legalLoading`\n   - On press: fetch content from API endpoint using axios, display in ScrollView with white bg\n   - Add close button (X) at top right\n   - Fallback: if fetch fails, open in external browser via Linking\n6. Also verify the backend legal_handler.go returns proper HTML — currently it does (privacy and terms endpoints return full HTML pages)\n\n**Additional:** Check that `app.json` or `app.config.ts` has the correct privacy policy URL set for App Store metadata — it should point to `http://89.47.113.196:8086/api/legal/privacy`\n\n**Test:** `cd mobile \u0026\u0026 npx tsc --noEmit`",
-      "status": "pending",
+      "status": "in_progress",
       "priority": 8,
       "depends_on": [],
       "test_command": "cd mobile \u0026\u0026 npx tsc --noEmit",
       "auto_commit": true,
       "created_at": "",
-      "updated_at": ""
+      "updated_at": "2026-02-15T02:28:51Z"
     },
     {
       "id": "enhance_006",

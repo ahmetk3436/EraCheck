@@ -5,12 +5,14 @@ import {
   ActivityIndicator,
   View,
   type PressableProps,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { cn } from '../../lib/cn';
 import { hapticLight } from '../../lib/haptics';
 
-interface ButtonProps extends PressableProps {
+interface ButtonProps extends Omit<PressableProps, 'style'> {
   title: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'destructive' | 'gradient';
   size?: 'sm' | 'md' | 'lg';
@@ -18,6 +20,7 @@ interface ButtonProps extends PressableProps {
   gradientColors?: string[];
   icon?: React.ReactNode;
   fullWidth?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
 const variantStyles = {
@@ -106,7 +109,7 @@ export default function Button({
         {...props}
       >
         <LinearGradient
-          colors={gradientColors as readonly [string, string, ...string[]]}
+          colors={gradientColors as unknown as readonly [string, string, ...string[]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           className="items-center justify-center px-5 py-3"

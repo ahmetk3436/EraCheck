@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import { Paths, File } from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { hapticSuccess, hapticError, hapticLight } from '../../lib/haptics';
 
@@ -67,12 +67,13 @@ export default function ShareableResult({
       });
 
       if (uri) {
-        // Save to temp file
-        const fileUri = FileSystem.documentDirectory + 'eracheck-result.png';
-        await FileSystem.copyAsync({ from: uri, to: fileUri });
+        // Copy to document directory for sharing
+        const destFile = new File(Paths.document, 'eracheck-result.png');
+        const sourceFile = new File(uri);
+        sourceFile.copy(destFile);
 
         // Share via system sheet
-        await Sharing.shareAsync(fileUri, {
+        await Sharing.shareAsync(destFile.uri, {
           mimeType: 'image/png',
           dialogTitle: 'Share your Era result',
         });

@@ -19,6 +19,8 @@ import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import { hapticSuccess, hapticError, hapticLight, hapticWarning, hapticSelection } from '../../../lib/haptics';
 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api';
+
 interface FavoriteEraProfile {
   key: string;
   title: string;
@@ -51,6 +53,12 @@ export default function SettingsScreen() {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  // Legal modal state
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [legalContent, setLegalContent] = useState('');
+  const [legalTitle, setLegalTitle] = useState('');
+  const [legalLoading, setLegalLoading] = useState(false);
 
   const isAppleUser = user?.isAppleUser || false;
 
@@ -148,10 +156,66 @@ export default function SettingsScreen() {
     }
   }, [deletePassword, isAppleUser, deleteAccount, router]);
 
-  const handlePrivacyPolicy = () => {
+  const openLegalPage = useCallback(async (type: 'privacy' | 'terms') => {
     hapticLight();
-    Linking.openURL('https://example.com/privacy');
-  };
+
+    const title = type === 'privacy' ? 'Privacy Policy' : 'Terms of Service';
+    setLegalTitle(title);
+    setShowLegalModal(true);
+    setLegalLoading(true);
+    setLegalContent('');
+
+    try {
+      const response = await api.get(`/legal/${type}`, {
+        responseType: 'text',
+        headers: { 'Accept': 'text/html' },
+      });
+
+      const htmlContent = typeof response.data === 'string'
+        ? response.data
+        : JSON.stringify(response.data);
+
+      // Strip HTML tags for plain text display
+      const plainText = htmlContent
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n\n')
+        .replace(/<\/h[1-6]>/gi, '\n\n')
+        .replace(/<li>/gi, '• ')
+        .replace(/<\/li>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/\n\s*\n\s*\n/g, '\n\n')
+        .trim();
+
+      setLegalContent(plainText);
+    } catch (error) {
+      // Fallback: open in external browser
+      const url = `${API_BASE_URL}/legal/${type}`;
+      try {
+        const supported = await Linking.canOpenURL(url);
+        if (supported) {
+          await Linking.openURL(url);
+        }
+      } catch (linkError) {
+        Alert.alert('Error', 'Unable to open legal page. Please try again later.');
+      }
+      setShowLegalModal(false);
+    } finally {
+      setLegalLoading(false);
+    }
+  }, []);
+
+  const closeLegalModal = useCallback(() => {
+    hapticLight();
+    setShowLegalModal(false);
+    setLegalContent('');
+    setLegalTitle('');
+  }, []);
 
   const handleRestorePurchases = async () => {
     hapticLight();
@@ -314,7 +378,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={handlePrivacyPolicy}
+              onPress={() => openLegalPage('privacy')}
               className="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-3 flex-row items-center justify-between"
             >
               <View className="flex-row items-center">
@@ -335,7 +399,7 @@ export default function SettingsScreen() {
           </Text>
 
           <TouchableOpacity
-            onPress={() => Linking.openURL('https://example.com/terms')}
+            onPress={() => openLegalPage('terms')}
             className="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-3 flex-row items-center justify-between"
           >
             <View className="flex-row items-center">
@@ -389,6 +453,25 @@ export default function SettingsScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Legal Document Modal */}
+      <Modal
+        visible={showLegalModal}
+        onClose={closeLegalModal}
+        title={legalTitle}
+        size="lg"
+      >
+        {legalLoading ? (
+          <View className="items-center py-10">
+            <ActivityIndicator size="large" color="#ec4899" />
+            <Text className="mt-4 text-gray-400">Loading...</Text>
+          </View>
+        ) : (
+          <Text className="text-base text-gray-300 leading-6">
+            {legalContent}
+          </Text>
+        )}
+      </Modal>
 
       {/* Delete Account Confirmation Modal */}
       <Modal
