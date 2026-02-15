@@ -160,13 +160,13 @@
       "id": "enhance_014",
       "title": "Add Pull-to-Refresh Error Recovery and Offline Banner",
       "description": "Multiple screens have pull-to-refresh but no error recovery or offline detection. Users on poor connections see broken states.\n\n**Files to modify:**\n\n1. **Create `mobile/lib/network.ts`** — Network status utility:\n   - Import `NetInfo` from `@react-native-community/netinfo` — WAIT, check package.json first. If not available, use a simpler approach:\n   - Create a `useNetworkStatus()` hook that pings the API health endpoint every 30s\n   - Returns `{ isOnline: boolean, isChecking: boolean }`\n   - On offline detection: `hapticWarning()`\n   - Cache last known state in AsyncStorage\n\n2. **Create offline banner component** in screens that need it:\n   - Add to `mobile/app/(protected)/(tabs)/index.tsx`, `history.tsx`, `challenge.tsx`:\n   ```tsx\n   {!isOnline \u0026\u0026 (\n     \u003cView className=\"bg-red-900/50 border border-red-700 rounded-xl mx-4 mt-2 p-3 flex-row items-center gap-2\"\u003e\n       \u003cIonicons name=\"cloud-offline\" size={20} color=\"#f87171\" /\u003e\n       \u003cText className=\"text-red-400 text-sm flex-1\"\u003eYou're offline. Some features may be unavailable.\u003c/Text\u003e\n     \u003c/View\u003e\n   )}\n   ```\n\n3. **Pull-to-Refresh Error Handling:**\n   - `history.tsx`: On refresh failure, show inline error banner (auto-dismiss 3s):\n     ```tsx\n     {refreshError \u0026\u0026 (\n       \u003cAnimated.View entering={FadeIn} exiting={FadeOut}\n         className=\"bg-red-900/30 border border-red-800 rounded-xl mx-4 p-3 mb-2\"\u003e\n         \u003cText className=\"text-red-400 text-sm text-center\"\u003eFailed to refresh. Pull down to try again.\u003c/Text\u003e\n       \u003c/Animated.View\u003e\n     )}\n     ```\n   - Add `refreshError` state, set on catch, auto-clear with `setTimeout(3000)`\n   - Same pattern for `challenge.tsx` and `index.tsx`\n\n4. **Retry Logic:**\n   - On error state screens, add exponential backoff: 1s → 2s → 4s (max 3 retries)\n   - After 3 failures, show persistent error with manual 'Retry' button\n   - Track retry count in state, reset on success\n\n**Test:** `cd mobile \u0026\u0026 npx tsc --noEmit`",
-      "status": "in_progress",
+      "status": "completed",
       "priority": 6,
       "depends_on": [],
       "test_command": "cd mobile \u0026\u0026 npx tsc --noEmit",
       "auto_commit": true,
       "created_at": "",
-      "updated_at": "2026-02-15T03:37:40Z"
+      "updated_at": "2026-02-15T03:44:33Z"
     }
   ]
 }
