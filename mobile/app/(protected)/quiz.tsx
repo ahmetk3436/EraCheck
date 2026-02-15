@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,17 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../lib/api';
-import { hapticSuccess, hapticError, hapticLight } from '../../lib/haptics';
+import { hapticSuccess, hapticError, hapticLight, hapticSelection } from '../../lib/haptics';
 import { useAuth } from '../../contexts/AuthContext';
 import { canTakeQuiz, incrementGuestQuizCount, isGuestMode } from '../../lib/guest';
+import Skeleton from '../../components/Skeleton';
+import ErrorState from '../../components/ErrorState';
 
 interface QuizOption {
   text: string;
@@ -26,6 +29,52 @@ interface QuizQuestion {
   options: QuizOption[];
 }
 
+const QuestionSkeleton: React.FC = () => (
+  <View className="flex-1">
+    {/* Header skeleton */}
+    <View className="px-6 py-4 border-b border-gray-800">
+      <View className="flex-row items-center justify-between mb-3">
+        <Skeleton className="w-8 h-8 rounded-full" />
+        <Skeleton className="w-32 h-5" />
+        <View style={{ width: 28 }} />
+      </View>
+      <Skeleton className="w-full h-2 rounded-full" />
+    </View>
+
+    <View className="px-6 py-6">
+      {/* Question skeleton */}
+      <Skeleton className="w-full h-8 mb-2" />
+      <Skeleton className="w-2/3 h-8 mb-6" />
+
+      {/* Options skeleton */}
+      <Skeleton className="w-full h-16 rounded-xl mb-3" />
+      <Skeleton className="w-full h-16 rounded-xl mb-3" />
+      <Skeleton className="w-full h-16 rounded-xl mb-3" />
+      <Skeleton className="w-full h-16 rounded-xl" />
+    </View>
+  </View>
+);
+
+const SubmissionOverlay: React.FC<{ visible: boolean }> = ({ visible }) => (
+  <Modal
+    visible={visible}
+    transparent
+    animationType="fade"
+  >
+    <View className="flex-1 items-center justify-center" style={{ backgroundColor: 'rgba(3,7,18,0.9)' }}>
+      <View className="bg-gray-900 rounded-3xl p-8 items-center mx-6">
+        <ActivityIndicator size="large" color="#ec4899" />
+        <Text className="text-white text-xl font-semibold mt-6 text-center">
+          Analyzing your aesthetic...
+        </Text>
+        <Text className="text-gray-400 text-sm mt-2 text-center">
+          This may take a moment
+        </Text>
+      </View>
+    </View>
+  </Modal>
+);
+
 export default function QuizScreen() {
   const router = useRouter();
   const { incrementGuestUsage } = useAuth();
@@ -34,13 +83,17 @@ export default function QuizScreen() {
   const [answers, setAnswers] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadQuestions();
   }, []);
 
-  const loadQuestions = async () => {
+  const loadQuestions = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
+
       // Check guest limit
       const allowed = await canTakeQuiz();
       if (!allowed) {
@@ -60,14 +113,20 @@ export default function QuizScreen() {
       // Extract questions from envelope
       const questionsData = data.questions || data;
       setQuestions(questionsData);
-    } catch (error: any) {
-      console.error('Failed to load questions:', error);
+
+      hapticSuccess();
+    } catch (err: any) {
+      console.error('Failed to load questions:', err);
       hapticError();
-      Alert.alert('Error', 'Failed to load quiz questions');
-      router.back();
+      setError('Could not load quiz');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const handleRetry = () => {
+    hapticSelection();
+    loadQuestions();
   };
 
   const handleSelectOption = (optionIndex: number) => {
@@ -109,12 +168,11 @@ export default function QuizScreen() {
       const resultData = data.data || data;
       const resultId = resultData.result?.id || resultData.id;
       router.replace(`/(protected)/results/${resultId}`);
-    } catch (error: any) {
-      console.error('Failed to submit quiz:', error);
+    } catch (err: any) {
+      console.error('Failed to submit quiz:', err);
       hapticError();
-      Alert.alert('Error', 'Failed to submit quiz. Please try again.');
-    } finally {
       setSubmitting(false);
+      setError('Failed to submit quiz. Please try again.');
     }
   };
 
@@ -128,9 +186,21 @@ export default function QuizScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-950">
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#ec4899" />
-        </View>
+        <QuestionSkeleton />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-950">
+        <ErrorState
+          icon="help-buoy-outline"
+          title="Could Not Load Quiz"
+          message="We couldn't load the quiz questions"
+          retryText="Try Again"
+          onRetry={handleRetry}
+        />
       </SafeAreaView>
     );
   }
@@ -160,6 +230,9 @@ export default function QuizScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950">
+      {/* Submission Overlay */}
+      <SubmissionOverlay visible={submitting} />
+
       {/* Header */}
       <View className="px-6 py-4 border-b border-gray-800">
         <View className="flex-row items-center justify-between mb-3">
@@ -248,13 +321,9 @@ export default function QuizScreen() {
             className="flex-1 rounded-xl py-4 items-center"
             style={{ backgroundColor: '#ec4899' }}
           >
-            {submitting ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text className="text-white font-semibold text-base">
-                Get Results
-              </Text>
-            )}
+            <Text className="text-white font-semibold text-base">
+              Get Results
+            </Text>
           </TouchableOpacity>
         )}
       </View>

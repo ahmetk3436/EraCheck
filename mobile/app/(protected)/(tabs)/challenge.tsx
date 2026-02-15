@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,15 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../../lib/api';
-import { hapticSuccess, hapticError, hapticLight } from '../../../lib/haptics';
+import { hapticSuccess, hapticError, hapticLight, hapticSelection } from '../../../lib/haptics';
+import Skeleton from '../../../components/Skeleton';
+import ErrorState from '../../../components/ErrorState';
 
 interface DailyChallenge {
   id: string;
@@ -35,6 +36,42 @@ interface Badge {
   unlocked: boolean;
 }
 
+const ChallengeSkeleton: React.FC = () => (
+  <View className="p-6">
+    {/* Header skeleton */}
+    <View className="mb-6">
+      <Skeleton className="w-48 h-8 mb-2" />
+      <Skeleton className="w-40 h-5" />
+    </View>
+
+    {/* Streak card skeleton */}
+    <Skeleton className="w-full h-20 rounded-2xl mb-6" />
+
+    {/* Badges skeleton */}
+    <View className="flex-row mb-6">
+      {[1, 2, 3, 4].map((i) => (
+        <View key={i} className="items-center mr-4">
+          <Skeleton className="w-14 h-14 rounded-full mb-1" />
+          <Skeleton className="w-10 h-3" />
+        </View>
+      ))}
+    </View>
+
+    {/* Challenge card skeleton */}
+    <View className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
+      <Skeleton className="w-full h-6 mb-4" />
+      <Skeleton className="w-3/4 h-6 mb-2" />
+      <Skeleton className="w-1/2 h-6" />
+    </View>
+
+    {/* Response input skeleton */}
+    <Skeleton className="w-full h-32 rounded-xl mb-4" />
+
+    {/* Submit button skeleton */}
+    <Skeleton className="w-full h-14 rounded-xl" />
+  </View>
+);
+
 export default function ChallengeScreen() {
   const [challenge, setChallenge] = useState<DailyChallenge | null>(null);
   const [streak, setStreak] = useState<Streak | null>(null);
@@ -43,13 +80,18 @@ export default function ChallengeScreen() {
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
+
       const [challengeRes, streakRes] = await Promise.all([
         api.get('/challenges/daily'),
         api.get('/challenges/streak'),
@@ -74,34 +116,43 @@ export default function ChallengeScreen() {
       } catch {
         // History fetch is optional
       }
-    } catch (error: any) {
-      console.error('Failed to load data:', error);
+
+      hapticSuccess();
+    } catch (err: any) {
+      console.error('Failed to load data:', err);
       hapticError();
+      setError("Failed to load today's challenge");
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const handleRetry = () => {
+    hapticSelection();
+    loadData();
   };
 
   const handleSubmit = async () => {
     if (!challenge || !response.trim()) {
       hapticError();
-      Alert.alert('Error', 'Please enter a response');
+      setSubmissionError('Please enter a response');
       return;
     }
 
     setSubmitting(true);
+    setSubmissionError(null);
     try {
       await api.post('/challenges/submit', {
         response: response.trim(),
       });
 
       hapticSuccess();
-      Alert.alert('Success', 'Your response has been saved!');
+      setChallenge({ ...challenge, response: response.trim() });
       loadData();
-    } catch (error: any) {
-      console.error('Failed to submit response:', error);
+    } catch (err: any) {
+      console.error('Failed to submit response:', err);
       hapticError();
-      Alert.alert('Error', error.response?.data?.message || 'Failed to submit response. Please try again.');
+      setSubmissionError(err.response?.data?.message || 'Failed to submit response. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -112,9 +163,21 @@ export default function ChallengeScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#ec4899" />
-        </View>
+        <ChallengeSkeleton />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
+        <ErrorState
+          icon="help-circle-outline"
+          title="Challenge Unavailable"
+          message="We couldn't load today's challenge"
+          retryText="Try Again"
+          onRetry={handleRetry}
+        />
       </SafeAreaView>
     );
   }
@@ -209,7 +272,10 @@ export default function ChallengeScreen() {
                   numberOfLines={6}
                   textAlignVertical="top"
                   value={response}
-                  onChangeText={setResponse}
+                  onChangeText={(text) => {
+                    setResponse(text);
+                    if (submissionError) setSubmissionError(null);
+                  }}
                   editable={!hasResponded}
                   maxLength={500}
                 />
@@ -245,6 +311,14 @@ export default function ChallengeScreen() {
                     </Text>
                   )}
                 </TouchableOpacity>
+              )}
+
+              {/* Submission Error */}
+              {submissionError && (
+                <View className="flex-row items-center justify-center mt-4">
+                  <Ionicons name="close-circle" size={16} color="#ef4444" />
+                  <Text className="text-red-400 text-sm ml-2">{submissionError}</Text>
+                </View>
               )}
             </>
           ) : (

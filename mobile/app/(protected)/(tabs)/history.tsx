@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   FlatList,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../../lib/api';
-import { hapticError, hapticLight } from '../../../lib/haptics';
+import { hapticError, hapticLight, hapticSelection, hapticSuccess } from '../../../lib/haptics';
+import Skeleton from '../../../components/Skeleton';
+import ErrorState from '../../../components/ErrorState';
+import ToastBanner from '../../../components/ToastBanner';
 
 interface EraResult {
   id: string;
@@ -23,39 +25,90 @@ interface EraResult {
   created_at: string;
 }
 
+const HistoryItemSkeleton: React.FC = () => (
+  <View className="rounded-xl p-4 mb-3 flex-row items-center" style={{ backgroundColor: '#111827' }}>
+    <Skeleton className="w-16 h-16 rounded-full mr-4" />
+    <View className="flex-1">
+      <Skeleton className="w-32 h-5 mb-2" />
+      <Skeleton className="w-20 h-4" />
+    </View>
+    <Skeleton className="w-6 h-6 rounded-full" />
+  </View>
+);
+
+const HistorySkeleton: React.FC = () => (
+  <View className="flex-1">
+    <View className="px-6 py-4 border-b border-gray-800">
+      <Skeleton className="w-28 h-8 mb-2" />
+      <Skeleton className="w-16 h-4" />
+    </View>
+    <View className="p-6">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <HistoryItemSkeleton key={i} />
+      ))}
+    </View>
+  </View>
+);
+
 export default function HistoryScreen() {
   const router = useRouter();
   const [results, setResults] = useState<EraResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     loadResults();
   }, []);
 
-  const loadResults = async () => {
+  const loadResults = useCallback(async (isRefresh = false) => {
     try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
       const { data } = await api.get('/era/results');
       // Extract from envelope
       const resultsData = data.results || data;
       setResults(Array.isArray(resultsData) ? resultsData : []);
-    } catch (error: any) {
-      console.error('Failed to load results:', error);
-      hapticError();
+
+      if (!isRefresh) {
+        hapticSuccess();
+      }
+    } catch (err: any) {
+      console.error('Failed to load results:', err);
+      if (isRefresh) {
+        // Show toast for refresh failure
+        setToastMessage('Failed to refresh history');
+        setShowToast(true);
+        hapticError();
+      } else {
+        setError('Failed to load your quiz history');
+        hapticError();
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
-  const handleRefresh = () => {
-    setRefreshing(true);
+  const handleRetry = () => {
+    hapticSelection();
     loadResults();
   };
 
   const handleResultPress = (id: string) => {
     hapticLight();
     router.push(`/(protected)/results/${id}`);
+  };
+
+  const handleDismissToast = () => {
+    setShowToast(false);
   };
 
   const renderItem = ({ item }: { item: EraResult }) => {
@@ -103,15 +156,35 @@ export default function HistoryScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#ec4899" />
-        </View>
+        <HistorySkeleton />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
+        <ErrorState
+          icon="time-outline"
+          title="No History Found"
+          message="We couldn't load your quiz history"
+          retryText="Try Again"
+          onRetry={handleRetry}
+        />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
+      {/* Toast Banner */}
+      <ToastBanner
+        visible={showToast}
+        message={toastMessage}
+        type="error"
+        onDismiss={handleDismissToast}
+      />
+
       {/* Header */}
       <View className="px-6 py-4 border-b border-gray-800">
         <Text className="text-3xl font-bold text-white">History</Text>
@@ -153,8 +226,8 @@ export default function HistoryScreen() {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor="#ec4899"
+              onRefresh={() => loadResults(true)}
+              tintColor="#a855f7"
             />
           }
         />

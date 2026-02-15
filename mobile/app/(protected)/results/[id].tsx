@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Share,
+  Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../../lib/api';
-import { hapticSuccess, hapticError, hapticLight } from '../../../lib/haptics';
+import { hapticSuccess, hapticError, hapticLight, hapticSelection } from '../../../lib/haptics';
+import Skeleton from '../../../components/Skeleton';
+import ErrorState from '../../../components/ErrorState';
 
 const eraDisplayNames: Record<string, { name: string; emoji: string }> = {
   y2k: { name: 'Y2K Baby', emoji: '\u{1F496}' },
@@ -41,12 +43,71 @@ interface EraResult {
   created_at: string;
 }
 
+const ResultSkeleton: React.FC = () => (
+  <View className="flex-1">
+    {/* Header skeleton */}
+    <View className="px-6 py-4 flex-row items-center justify-between border-b border-gray-800">
+      <Skeleton className="w-8 h-8 rounded-full" />
+      <Skeleton className="w-24 h-5" />
+      <Skeleton className="w-8 h-8 rounded-full" />
+    </View>
+
+    {/* Main card skeleton */}
+    <View className="mx-6 mt-6">
+      <Skeleton className="w-full h-56 rounded-3xl mb-6" />
+    </View>
+
+    {/* Description skeleton */}
+    <View className="mx-6">
+      <Skeleton className="w-48 h-6 mb-3" />
+      <Skeleton className="w-full h-4 mb-2" />
+      <Skeleton className="w-full h-4 mb-2" />
+      <Skeleton className="w-2/3 h-4 mb-6" />
+    </View>
+
+    {/* Music / Style skeleton */}
+    <View className="mx-6">
+      <Skeleton className="w-full h-32 rounded-2xl mb-4" />
+      <Skeleton className="w-full h-32 rounded-2xl mb-6" />
+    </View>
+
+    {/* Buttons skeleton */}
+    <View className="mx-6">
+      <Skeleton className="w-full h-14 rounded-xl mb-3" />
+      <Skeleton className="w-full h-14 rounded-xl" />
+    </View>
+  </View>
+);
+
+const NotFoundState: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => (
+  <View className="flex-1 items-center justify-center px-6">
+    <View className="w-24 h-24 rounded-full bg-gray-800 items-center justify-center mb-6">
+      <Ionicons name="search-outline" size={48} color="#6b7280" />
+    </View>
+    <Text className="text-white text-2xl font-bold text-center mb-2">
+      Result Not Found
+    </Text>
+    <Text className="text-gray-400 text-base text-center mb-6">
+      This result may have been deleted or doesn't exist
+    </Text>
+    <Pressable
+      onPress={onGoBack}
+      className="rounded-xl px-6 py-3 active:opacity-70"
+      style={{ backgroundColor: '#a855f7' }}
+    >
+      <Text className="text-white font-semibold">Go Back</Text>
+    </Pressable>
+  </View>
+);
+
 export default function ResultsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const [result, setResult] = useState<EraResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [sharing, setSharing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -54,22 +115,39 @@ export default function ResultsScreen() {
     }
   }, [id]);
 
-  const loadResult = async () => {
+  const loadResult = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
+      setNotFound(false);
+
       const { data } = await api.get(`/era/results/${id}`);
       // Extract result from envelope: {error, data: {result, profile}}
       const envelope = data.data || data;
       const resultData = envelope.result || envelope;
       setResult(resultData);
       hapticSuccess();
-    } catch (error: any) {
-      console.error('Failed to load result:', error);
-      hapticError();
-      Alert.alert('Error', 'Failed to load results');
-      router.back();
+    } catch (err: any) {
+      console.error('Failed to load result:', err);
+      if (err.response?.status === 404) {
+        setNotFound(true);
+      } else {
+        hapticError();
+        setError('Failed to load result');
+      }
     } finally {
       setLoading(false);
     }
+  }, [id]);
+
+  const handleRetry = () => {
+    hapticSelection();
+    loadResult();
+  };
+
+  const handleGoBack = () => {
+    hapticSelection();
+    router.back();
   };
 
   const handleShare = async () => {
@@ -87,8 +165,8 @@ export default function ResultsScreen() {
 
       hapticSuccess();
       loadResult();
-    } catch (error: any) {
-      console.error('Failed to share:', error);
+    } catch (err: any) {
+      console.error('Failed to share:', err);
       hapticError();
     } finally {
       setSharing(false);
@@ -103,9 +181,29 @@ export default function ResultsScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-950">
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#ec4899" />
-        </View>
+        <ResultSkeleton />
+      </SafeAreaView>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-950">
+        <NotFoundState onGoBack={handleGoBack} />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-950">
+        <ErrorState
+          icon="cloud-offline"
+          title="Failed to Load"
+          message="We couldn't load this result"
+          retryText="Try Again"
+          onRetry={handleRetry}
+        />
       </SafeAreaView>
     );
   }

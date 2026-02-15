@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Alert,
   RefreshControl,
 } from 'react-native';
@@ -13,8 +12,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../lib/api';
-import { hapticSuccess, hapticError, hapticLight } from '../../../lib/haptics';
+import { hapticSuccess, hapticError, hapticLight, hapticSelection } from '../../../lib/haptics';
 import { isGuestMode, getRemainingQuizzes } from '../../../lib/guest';
+import Skeleton from '../../../components/Skeleton';
+import ErrorState from '../../../components/ErrorState';
 
 interface Streak {
   current_streak: number;
@@ -29,6 +30,30 @@ interface EraResult {
   created_at: string;
 }
 
+const QuizHomeSkeleton: React.FC = () => (
+  <View className="p-6">
+    {/* Header skeleton */}
+    <View className="mb-8">
+      <Skeleton className="w-40 h-10 mb-2" />
+      <Skeleton className="w-56 h-5" />
+    </View>
+
+    {/* Streak badge skeleton */}
+    <Skeleton className="w-full h-20 rounded-2xl mb-6" />
+
+    {/* Result card skeleton */}
+    <Skeleton className="w-full h-32 rounded-2xl mb-6" />
+
+    {/* Start button skeleton */}
+    <Skeleton className="w-full h-28 rounded-2xl mb-8" />
+
+    {/* Info cards skeleton */}
+    <Skeleton className="w-full h-20 rounded-xl mb-4" />
+    <Skeleton className="w-full h-20 rounded-xl mb-4" />
+    <Skeleton className="w-full h-20 rounded-xl" />
+  </View>
+);
+
 export default function QuizHomeScreen() {
   const router = useRouter();
   const { isGuest, guestUsageCount, canUseFeature, isAuthenticated } = useAuth();
@@ -37,24 +62,28 @@ export default function QuizHomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [guestRemaining, setGuestRemaining] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = async () => {
-    // Check guest mode remaining
-    const guest = await isGuestMode();
-    if (guest) {
-      const rem = await getRemainingQuizzes();
-      setGuestRemaining(rem);
-    }
-
-    if (isGuest && !isAuthenticated) {
-      setLoading(false);
-      return;
-    }
+  const loadData = useCallback(async () => {
     try {
+      setError(null);
+
+      // Check guest mode remaining
+      const guest = await isGuestMode();
+      if (guest) {
+        const rem = await getRemainingQuizzes();
+        setGuestRemaining(rem);
+      }
+
+      if (isGuest && !isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+
       const [streakRes, resultsRes] = await Promise.all([
         api.get('/challenges/streak'),
         api.get('/era/results'),
@@ -68,18 +97,27 @@ export default function QuizHomeScreen() {
       if (results && results.length > 0) {
         setLatestResult(results[0]);
       }
-    } catch (error: any) {
-      console.error('Failed to load data:', error);
+
+      hapticSuccess();
+    } catch (err: any) {
+      console.error('Failed to load data:', err);
       hapticError();
+      setError('Failed to load quiz data. Please check your connection.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [isGuest, isAuthenticated]);
 
   const onRefresh = async () => {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
+  };
+
+  const handleRetry = () => {
+    hapticSelection();
+    setLoading(true);
+    loadData();
   };
 
   const handleStartQuiz = () => {
@@ -108,9 +146,21 @@ export default function QuizHomeScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#ec4899" />
-        </View>
+        <QuizHomeSkeleton />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
+        <ErrorState
+          icon="cloud-offline"
+          title="Something went wrong"
+          message="We couldn't load your quiz data"
+          retryText="Try Again"
+          onRetry={handleRetry}
+        />
       </SafeAreaView>
     );
   }
@@ -124,7 +174,7 @@ export default function QuizHomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#ec4899"
+            tintColor="#a855f7"
           />
         }
       >
