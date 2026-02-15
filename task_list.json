@@ -64,25 +64,25 @@
       "id": "enhance_006",
       "title": "Implement Loading Skeletons and Error States on All Screens",
       "description": "Multiple screens use plain ActivityIndicator for loading and have no error states with retry buttons. This doesn't meet App Store quality standards for 2025-2026.\n\n**Files to modify:**\n\n1. `mobile/app/(protected)/(tabs)/index.tsx` (Quiz Home)\n   - Replace ActivityIndicator loading with skeleton layout: 3 rounded-2xl placeholder boxes (bg-gray-800 with opacity pulse animation) matching the streak badge, result card, and start button layout\n   - Add error state: centered View with Ionicons 'cloud-offline' (64px, gray-500), 'Something went wrong' text-xl, 'Tap to retry' text-sm gray-400, Button with onPress={fetchData} variant='outline'\n   - Wrap fetch in try/catch, add `error` state variable\n\n2. `mobile/app/(protected)/(tabs)/history.tsx`\n   - Add error state with retry for FlatList data fetch failure\n   - Add RefreshControl error feedback: if refresh fails, show toast-style error banner at top (red-900/50 bg, text-red-400) that auto-dismisses after 3s\n\n3. `mobile/app/(protected)/(tabs)/challenge.tsx`\n   - Add loading skeleton for challenge card (pulsing rounded rect)\n   - Add error state if daily challenge fetch fails\n   - Add submission error handling with inline error message below submit button\n\n4. `mobile/app/(protected)/quiz.tsx`\n   - Add loading state when fetching questions from API\n   - Add error state if questions fail to load: 'Could not load quiz' with retry button\n   - Add submission loading state: full-screen overlay with ActivityIndicator + 'Analyzing your aesthetic...' text\n\n5. `mobile/app/(protected)/results/[id].tsx`\n   - Add 404 error state: 'Result not found' with Ionicons 'search' icon and 'Go Back' button\n   - Add loading skeleton matching result card layout\n\n**Skeleton Component Pattern (reuse across screens):**\n```tsx\nconst Skeleton = ({ className }: { className?: string }) =\u003e (\n  \u003cAnimated.View className={cn('bg-gray-800 rounded-2xl', className)} \n    style={{ opacity: useSharedValue(0.3-0.7 pulse) }} /\u003e\n);\n```\nUse `react-native-reanimated` withRepeat + withTiming for pulse animation.\n\n**Test:** `cd mobile \u0026\u0026 npx tsc --noEmit`",
-      "status": "in_progress",
+      "status": "completed",
       "priority": 8,
       "depends_on": [],
       "test_command": "cd mobile \u0026\u0026 npx tsc --noEmit",
       "auto_commit": true,
       "created_at": "",
-      "updated_at": "2026-02-15T02:37:26Z"
+      "updated_at": "2026-02-15T02:48:14Z"
     },
     {
       "id": "enhance_007",
       "title": "Add Haptic Feedback to All Missing Interactions",
       "description": "While most buttons have haptics, several interactions are missing haptic feedback per Apple Guideline 4.2 and the 2025-2026 Haptic-Visual Sync trend.\n\n**Files to modify:**\n\n1. `mobile/app/(protected)/(tabs)/challenge.tsx`\n   - Add `hapticSuccess()` after successful challenge submission (currently no haptic on submit success)\n   - Add `hapticError()` on submission failure\n   - Add `hapticSuccess()` when a new badge is unlocked (compare badges before/after streak update)\n   - Add `hapticMedium()` when daily challenge loads for the first time (engagement cue)\n\n2. `mobile/app/(protected)/(tabs)/history.tsx`\n   - Add `hapticLight()` on result item press (navigating to detail)\n   - Add `hapticError()` on pull-to-refresh failure\n\n3. `mobile/app/(protected)/results/[id].tsx`\n   - Add `hapticSuccess()` when share completes successfully\n   - Add `hapticError()` when share or result load fails\n   - Add `hapticMedium()` on 'Retake Quiz' button press (stronger feedback for major action)\n\n4. `mobile/app/(protected)/quiz.tsx`\n   - Add `hapticSuccess()` on final question answer (quiz complete moment)\n   - Add `hapticMedium()` on 'Get Results' button press\n   - Add `hapticWarning()` on quiz exit/back confirmation\n\n5. `mobile/app/(protected)/paywall.tsx`\n   - Add `hapticSuccess()` after successful purchase\n   - Add `hapticError()` on purchase failure\n   - Add `hapticLight()` on package selection\n\n6. `mobile/app/onboarding.tsx`\n   - Add `hapticLight()` on page scroll snap (when page index changes)\n   - Add `hapticMedium()` on 'Try Free' CTA button\n\n**Import pattern:** `import { hapticSuccess, hapticError, hapticLight, hapticMedium, hapticWarning } from '../../lib/haptics';` (adjust path depth per file)\n\n**Test:** `cd mobile \u0026\u0026 npx tsc --noEmit`",
-      "status": "pending",
+      "status": "in_progress",
       "priority": 7,
       "depends_on": [],
       "test_command": "cd mobile \u0026\u0026 npx tsc --noEmit",
       "auto_commit": true,
       "created_at": "",
-      "updated_at": ""
+      "updated_at": "2026-02-15T02:48:14Z"
     },
     {
       "id": "enhance_008",

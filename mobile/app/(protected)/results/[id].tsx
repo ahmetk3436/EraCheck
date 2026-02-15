@@ -12,7 +12,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../../lib/api';
-import { hapticSuccess, hapticError, hapticLight, hapticSelection } from '../../../lib/haptics';
+import { hapticSuccess, hapticError, hapticLight, hapticMedium, hapticSelection } from '../../../lib/haptics';
 import Skeleton from '../../../components/Skeleton';
 import ErrorState from '../../../components/ErrorState';
 
@@ -174,7 +174,8 @@ export default function ResultsScreen() {
   };
 
   const handleRetake = () => {
-    hapticLight();
+    // Medium haptic for major action
+    hapticMedium();
     router.push('/(protected)/quiz');
   };
 

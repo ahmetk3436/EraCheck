@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
-import { hapticLight } from '../lib/haptics';
+import { hapticLight, hapticMedium } from '../lib/haptics';
 
 const { width } = Dimensions.get('window');
 
@@ -25,11 +25,16 @@ export default function OnboardingScreen() {
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const page = Math.round(event.nativeEvent.contentOffset.x / width);
+    // Light haptic on page snap
+    if (page !== currentPage) {
+      hapticLight();
+    }
     setCurrentPage(page);
   };
 
   const handleTryFree = async () => {
-    hapticLight();
+    // Medium haptic for CTA action
+    hapticMedium();
     await AsyncStorage.setItem('onboarding_complete', 'true');
     await continueAsGuest();
     router.replace('/(protected)/(tabs)');

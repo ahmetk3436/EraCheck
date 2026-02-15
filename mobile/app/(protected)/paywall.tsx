@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSubscription } from '../../contexts/SubscriptionContext';
 import { PurchasesPackage } from '../../lib/purchases';
-import { hapticSuccess, hapticMedium } from '../../lib/haptics';
+import { hapticSuccess, hapticError, hapticLight, hapticMedium } from '../../lib/haptics';
 
 export default function PaywallScreen() {
   const { offerings, isLoading, handlePurchase, handleRestore } =
@@ -20,6 +20,8 @@ export default function PaywallScreen() {
   const [purchasing, setPurchasing] = useState<string | null>(null);
 
   const handlePackagePurchase = async (pkg: PurchasesPackage) => {
+    // Light haptic on package selection
+    hapticLight();
     setPurchasing(pkg.identifier);
     try {
       const success = await handlePurchase(pkg);
@@ -28,6 +30,7 @@ export default function PaywallScreen() {
         Alert.alert('Success', 'Subscription activated!');
         router.back();
       } else {
+        hapticError();
         Alert.alert('Error', 'Purchase failed. Please try again.');
       }
     } finally {
@@ -43,6 +46,7 @@ export default function PaywallScreen() {
       Alert.alert('Success', 'Purchases restored!');
       router.back();
     } else {
+      hapticError();
       Alert.alert('Not Found', 'No previous purchases found.');
     }
   };

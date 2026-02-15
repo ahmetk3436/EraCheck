@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../lib/api';
-import { hapticSuccess, hapticError, hapticLight, hapticSelection } from '../../lib/haptics';
+import { hapticSuccess, hapticError, hapticLight, hapticMedium, hapticWarning, hapticSelection } from '../../lib/haptics';
 import { useAuth } from '../../contexts/AuthContext';
 import { canTakeQuiz, incrementGuestQuizCount, isGuestMode } from '../../lib/guest';
 import Skeleton from '../../components/Skeleton';
@@ -137,6 +137,11 @@ export default function QuizScreen() {
       [currentQuestion.id]: optionIndex,
     });
 
+    // Success haptic on final question answer
+    if (currentIndex === questions.length - 1) {
+      hapticSuccess();
+    }
+
     // Auto-advance to next question after short delay
     setTimeout(() => {
       if (currentIndex < questions.length - 1) {
@@ -152,6 +157,8 @@ export default function QuizScreen() {
       return;
     }
 
+    // Medium haptic for major action
+    hapticMedium();
     setSubmitting(true);
     try {
       const { data } = await api.post('/era/quiz', { answers });
@@ -236,7 +243,11 @@ export default function QuizScreen() {
       {/* Header */}
       <View className="px-6 py-4 border-b border-gray-800">
         <View className="flex-row items-center justify-between mb-3">
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => {
+            // Warning haptic for destructive action
+            hapticWarning();
+            router.back();
+          }}>
             <Ionicons name="close" size={28} color="#fff" />
           </TouchableOpacity>
           <Text className="text-lg font-semibold text-white">

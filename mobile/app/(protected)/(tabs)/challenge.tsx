@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../../lib/api';
-import { hapticSuccess, hapticError, hapticLight, hapticSelection } from '../../../lib/haptics';
+import { hapticSuccess, hapticError, hapticLight, hapticMedium, hapticSelection } from '../../../lib/haptics';
 import Skeleton from '../../../components/Skeleton';
 import ErrorState from '../../../components/ErrorState';
 
@@ -117,7 +117,8 @@ export default function ChallengeScreen() {
         // History fetch is optional
       }
 
-      hapticSuccess();
+      // Engagement cue when challenge loads
+      hapticMedium();
     } catch (err: any) {
       console.error('Failed to load data:', err);
       hapticError();
@@ -141,6 +142,8 @@ export default function ChallengeScreen() {
 
     setSubmitting(true);
     setSubmissionError(null);
+    // Store previous badge count for comparison
+    const previousUnlockedCount = badges.filter(b => b.unlocked).length;
     try {
       await api.post('/challenges/submit', {
         response: response.trim(),
@@ -148,6 +151,19 @@ export default function ChallengeScreen() {
 
       hapticSuccess();
       setChallenge({ ...challenge, response: response.trim() });
+
+      // Reload data to get updated streak/badges
+      const streakRes = await api.get('/challenges/streak');
+      const newBadges = streakRes.data.badges || [];
+      const newUnlockedCount = newBadges.filter((b: Badge) => b.unlocked).length;
+
+      // Check for new badge unlock
+      if (newUnlockedCount > previousUnlockedCount) {
+        setTimeout(() => {
+          hapticSuccess();
+        }, 300);
+      }
+
       loadData();
     } catch (err: any) {
       console.error('Failed to submit response:', err);
