@@ -16,25 +16,25 @@
       "id": "enhance_002",
       "title": "Expand Quiz Question Pool and Add Weighted Scoring Algorithm",
       "description": "The quiz system has only 3 hardcoded questions in `era_seed.go` (SeedQuestions array, line ~138-184). With only 3 questions, results feel shallow and repetitive. The scoring in `era_service.go` `SubmitQuizAnswers()` is a simple vote count with no weighting.\n\n**File 1:** `backend/internal/services/era_seed.go`\n- Expand SeedQuestions from 3 to 15 questions covering these categories:\n  - Style (3 questions): outfit, accessories, hair\n  - Music (2 questions): genre preference, concert vibe\n  - Social (2 questions): weekend plans, social media\n  - Aesthetic (3 questions): room decor, color palette, photography style\n  - Lifestyle (2 questions): food/drink, travel destination\n  - Culture (3 questions): movies/shows, icons/role models, slang\n- Each question must have exactly 10 options mapping to all 10 eras\n- Options must feel natural, not forced (e.g., 'Iced matcha with oat milk' maps to 2022_clean_girl)\n\n**File 2:** `backend/internal/services/era_service.go`\n- Update `SubmitQuizAnswers()` to use weighted scoring:\n  - Category weights: Style=1.5, Music=1.2, Social=1.0, Aesthetic=1.3, Lifestyle=0.8, Culture=1.0\n  - Store question category in EraQuiz model (already has Category field)\n  - Normalize final scores to percentages (0-100)\n  - Return top 3 eras with scores, not just the winner\n- Update `SeedQuizQuestions()` to set category field on each question\n- Ensure idempotent seeding: check by question text hash, not just count\n\n**File 3:** `backend/internal/models/era_quiz.go` - Category field already exists, ensure it's populated\n\n**Test:** `cd backend \u0026\u0026 go build ./...`",
-      "status": "in_progress",
+      "status": "completed",
       "priority": 10,
       "depends_on": [],
       "test_command": "cd backend \u0026\u0026 go build ./...",
       "auto_commit": true,
       "created_at": "",
-      "updated_at": "2026-02-15T01:58:30Z"
+      "updated_at": "2026-02-15T02:07:09Z"
     },
     {
       "id": "enhance_003",
       "title": "Strengthen Content Moderation with Real Profanity Filter",
       "description": "The moderation_service.go `FilterContent()` (line ~23) only checks for 'spam' and 'scam' using basic regex. This is inadequate for App Store review — Apple Guideline 1.2 requires robust content filtering.\n\n**File:** `backend/internal/services/moderation_service.go`\n\n**Current Problem:** Only 2 regex patterns: `\\b(spam|scam)\\b`. Challenge responses with profanity, slurs, or harmful content pass through unfiltered.\n\n**Implementation:**\n1. Create a comprehensive banned words list (100+ terms) covering:\n   - Profanity and slurs (common English offensive terms)\n   - Hate speech keywords\n   - Sexual content terms\n   - Violence-related terms\n   - Spam patterns (URLs, phone numbers, repeated chars)\n2. Add regex patterns for:\n   - URL detection: `https?://\\S+` or `www\\.\\S+`\n   - Email detection: `\\S+@\\S+\\.\\S+`\n   - Phone numbers: `\\d{3}[-.]?\\d{3}[-.]?\\d{4}`\n   - Repeated characters (4+): `(.)\\1{3,}`\n   - ALL CAPS text (5+ consecutive): `[A-Z]{5,}`\n3. Add a `SanitizeAndCheck(text string) (isClean bool, sanitized string, reason string)` method\n4. Integrate into `challenge_service.go` `SubmitChallengeResponse()` — call FilterContent on user response before processing\n5. Store the banned words as a `var bannedPatterns []string` slice compiled into `[]*regexp.Regexp` at init time for performance\n6. Return specific rejection reasons: 'inappropriate_language', 'spam_detected', 'url_not_allowed'\n\n**Update challenge_service.go:** Add moderation check before saving response:\n```go\nif clean, reason := s.moderationService.FilterContent(response); !clean {\n    return nil, fmt.Errorf(\"content rejected: %s\", reason)\n}\n```\n\n**Update main.go:** Pass moderationService to NewChallengeService\n\n**Test:** `cd backend \u0026\u0026 go build ./...`",
-      "status": "pending",
+      "status": "in_progress",
       "priority": 9,
       "depends_on": [],
       "test_command": "cd backend \u0026\u0026 go build ./...",
       "auto_commit": true,
       "created_at": "",
-      "updated_at": ""
+      "updated_at": "2026-02-15T02:07:09Z"
     },
     {
       "id": "enhance_004",

@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strings"
+
 	"github.com/ahmetcoskunkizilkaya/EraCheck/backend/internal/services"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -73,6 +75,15 @@ func (h *ChallengeHandler) SubmitChallenge(c *fiber.Ctx) error {
 
 	challenge, err := h.challengeService.SubmitChallengeResponse(userID, req.Response)
 	if err != nil {
+		// Check if it's a moderation error
+		if strings.Contains(err.Error(), "content rejected") {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error":   true,
+				"message": err.Error(),
+				"code":    "CONTENT_MODERATION_FAILED",
+			})
+		}
+
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
 			"message": err.Error(),

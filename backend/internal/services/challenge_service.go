@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"math/rand"
 	"strings"
@@ -15,20 +16,22 @@ import (
 
 // ChallengeService handles daily challenge logic.
 type ChallengeService struct {
-	db         *gorm.DB
-	aiAnalyzer *AIAnalyzer
+	db                *gorm.DB
+	aiAnalyzer        *AIAnalyzer
+	moderationService *ModerationService
 }
 
 // NewChallengeService creates a new ChallengeService.
-func NewChallengeService(db *gorm.DB, cfg *config.Config) *ChallengeService {
+func NewChallengeService(db *gorm.DB, cfg *config.Config, moderationService *ModerationService) *ChallengeService {
 	var aiAnalyzer *AIAnalyzer
 	if cfg != nil {
 		aiAnalyzer = NewAIAnalyzer(cfg.AIAPIURL, cfg.AIAPIKey)
 	}
 
 	return &ChallengeService{
-		db:         db,
-		aiAnalyzer: aiAnalyzer,
+		db:                db,
+		aiAnalyzer:        aiAnalyzer,
+		moderationService: moderationService,
 	}
 }
 
@@ -77,6 +80,15 @@ func (s *ChallengeService) GetDailyChallenge(userID uuid.UUID) (*models.EraChall
 
 // SubmitChallengeResponse saves the user's response to today's challenge.
 func (s *ChallengeService) SubmitChallengeResponse(userID uuid.UUID, response string) (*models.EraChallenge, error) {
+	// Content moderation check
+	if s.moderationService != nil {
+		isClean, reason := s.moderationService.FilterContent(response)
+		if !isClean {
+			rejectionMsg := s.moderationService.GetRejectionMessage(reason)
+			return nil, fmt.Errorf("content rejected: %s", rejectionMsg)
+		}
+	}
+
 	today := time.Now().Truncate(24 * time.Hour)
 
 	var challenge models.EraChallenge

@@ -49,7 +49,7 @@ func TestValidEras(t *testing.T) {
 }
 
 func TestKeywordFallback(t *testing.T) {
-	service := NewChallengeService(nil, nil)
+	service := NewChallengeService(nil, nil, nil)
 
 	testCases := []struct {
 		input    string

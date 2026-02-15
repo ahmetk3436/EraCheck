@@ -43,7 +43,7 @@ func main() {
 	subscriptionService := services.NewSubscriptionService(database.DB)
 	moderationService := services.NewModerationService(database.DB)
 	eraService := services.NewEraService(database.DB)
-	challengeService := services.NewChallengeService(database.DB, cfg)
+	challengeService := services.NewChallengeService(database.DB, cfg, moderationService)
 	streakService := services.NewStreakService(database.DB)
 
 	// Handlers
