@@ -2,15 +2,23 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
-  ScrollView,
+  Pressable,
   ActivityIndicator,
   Alert,
-  Modal,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  withSequence,
+  withRepeat,
+  Easing,
+} from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../lib/api';
 import { hapticSuccess, hapticError, hapticLight, hapticMedium, hapticWarning, hapticSelection } from '../../lib/haptics';
@@ -32,7 +40,6 @@ interface QuizQuestion {
 
 const QuestionSkeleton: React.FC = () => (
   <View className="flex-1">
-    {/* Header skeleton */}
     <View className="px-6 py-4 border-b border-gray-800">
       <View className="flex-row items-center justify-between mb-3">
         <Skeleton className="w-8 h-8 rounded-full" />
@@ -43,11 +50,9 @@ const QuestionSkeleton: React.FC = () => (
     </View>
 
     <View className="px-6 py-6">
-      {/* Question skeleton */}
       <Skeleton className="w-full h-8 mb-2" />
       <Skeleton className="w-2/3 h-8 mb-6" />
 
-      {/* Options skeleton */}
       <Skeleton className="w-full h-16 rounded-xl mb-3" />
       <Skeleton className="w-full h-16 rounded-xl mb-3" />
       <Skeleton className="w-full h-16 rounded-xl mb-3" />
@@ -56,40 +61,205 @@ const QuestionSkeleton: React.FC = () => (
   </View>
 );
 
-const SubmissionOverlay: React.FC<{ visible: boolean }> = ({ visible }) => (
-  <Modal
-    visible={visible}
-    transparent
-    animationType="fade"
-  >
-    <View className="flex-1 items-center justify-center" style={{ backgroundColor: 'rgba(3,7,18,0.9)' }}>
-      <View className="bg-gray-900 rounded-3xl p-8 items-center mx-6">
-        <ActivityIndicator size="large" color="#ec4899" />
-        <Text className="text-white text-xl font-semibold mt-6 text-center">
-          Analyzing your aesthetic...
-        </Text>
-        <Text className="text-gray-400 text-sm mt-2 text-center">
-          This may take a moment
-        </Text>
-      </View>
-    </View>
-  </Modal>
-);
-
 export default function QuizScreen() {
   const router = useRouter();
   const { incrementGuestUsage } = useAuth();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [key: string]: number }>({});
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadQuestions();
+  // Shared values for animations
+  const progressWidth = useSharedValue<number>(0);
+  const optionScale = useSharedValue<number>(1);
+  const checkmarkScale = useSharedValue<number>(0);
+  const glowOpacity = useSharedValue<number>(0.3);
+  const overlayOpacity = useSharedValue<number>(0);
+  const questionTranslateX = useSharedValue<number>(0);
+  const questionOpacity = useSharedValue<number>(1);
+
+  // Animated styles
+  const progressAnimatedStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
+
+  const questionAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: questionTranslateX.value }],
+    opacity: questionOpacity.value,
+  }));
+
+  const optionAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: optionScale.value }],
+  }));
+
+  const checkmarkAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: checkmarkScale.value }],
+    opacity: checkmarkScale.value,
+  }));
+
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
+    shadowColor: '#ec4899',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: glowOpacity.value,
+    shadowRadius: 20,
+    elevation: 10,
+  }));
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+  }));
+
+  // Animate progress bar
+  const animateProgress = useCallback((current: number, total: number) => {
+    const targetWidth = (current / total) * 100;
+    progressWidth.value = withTiming(targetWidth, {
+      duration: 400,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
   }, []);
 
+  // Start glow animation for submit button
+  const startGlowAnimation = useCallback(() => {
+    glowOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.8, { duration: 1000 }),
+        withTiming(0.3, { duration: 1000 })
+      ),
+      -1,
+      true
+    );
+  }, []);
+
+  // Advance to next question with animation
+  const advanceToNextQuestion = useCallback(() => {
+    // Animate out (slide left + fade)
+    questionTranslateX.value = withTiming(-50, { duration: 150 });
+    questionOpacity.value = withTiming(0, { duration: 150 });
+
+    setTimeout(() => {
+      setCurrentIndex(prev => prev + 1);
+      setSelectedOption(null);
+      checkmarkScale.value = 0;
+
+      // Reset position to right, then animate in
+      questionTranslateX.value = 50;
+      questionOpacity.value = 0;
+
+      questionTranslateX.value = withTiming(0, { duration: 300 });
+      questionOpacity.value = withTiming(1, { duration: 300 });
+
+      animateProgress(currentIndex + 2, questions.length);
+    }, 150);
+  }, [currentIndex, questions.length, animateProgress]);
+
+  // Handle option selection with animation
+  const handleSelectOption = useCallback((optionIndex: number) => {
+    if (selectedOption !== null) return;
+
+    hapticLight();
+
+    // Spring scale animation
+    optionScale.value = withSequence(
+      withTiming(0.95, { duration: 100 }),
+      withSpring(1.02, { damping: 8, stiffness: 400 }),
+      withTiming(1.0, { duration: 100 })
+    );
+
+    setSelectedOption(optionIndex);
+
+    // Animate checkmark
+    checkmarkScale.value = withSpring(1, { damping: 8, stiffness: 400 });
+
+    const currentQuestion = questions[currentIndex];
+    setAnswers(prev => ({
+      ...prev,
+      [currentQuestion.id]: optionIndex,
+    }));
+
+    // Success haptic on final question answer
+    if (currentIndex === questions.length - 1) {
+      hapticSuccess();
+    }
+
+    // Auto-advance after delay
+    setTimeout(() => {
+      if (currentIndex < questions.length - 1) {
+        advanceToNextQuestion();
+      }
+    }, 300);
+  }, [selectedOption, questions, currentIndex, advanceToNextQuestion]);
+
+  // Handle submit
+  const handleSubmit = useCallback(async () => {
+    if (Object.keys(answers).length < questions.length) {
+      hapticError();
+      Alert.alert('Incomplete', 'Please answer all questions');
+      return;
+    }
+
+    hapticMedium();
+    setSubmitting(true);
+
+    // Animate overlay
+    overlayOpacity.value = withTiming(1, { duration: 300 });
+
+    try {
+      const { data } = await api.post('/era/quiz', { answers });
+      hapticSuccess();
+
+      // Increment guest usage if in guest mode
+      const guest = await isGuestMode();
+      if (guest) {
+        await incrementGuestQuizCount();
+        await incrementGuestUsage();
+      }
+
+      // Extract result ID from envelope
+      const resultData = data.data || data;
+      const resultId = resultData.result?.id || resultData.id;
+
+      // Flag for celebration animation on home screen
+      await AsyncStorage.setItem('quiz_just_completed', 'true');
+      router.replace(`/(protected)/results/${resultId}`);
+    } catch (err: any) {
+      console.error('Failed to submit quiz:', err);
+      hapticError();
+      setSubmitting(false);
+      overlayOpacity.value = withTiming(0, { duration: 300 });
+      setError('Failed to submit quiz. Please try again.');
+    }
+  }, [answers, questions.length, router, incrementGuestUsage]);
+
+  // Handle previous question
+  const handlePrevious = useCallback(() => {
+    if (currentIndex > 0) {
+      hapticLight();
+
+      // Animate out (slide right + fade)
+      questionTranslateX.value = withTiming(50, { duration: 150 });
+      questionOpacity.value = withTiming(0, { duration: 150 });
+
+      setTimeout(() => {
+        setCurrentIndex(prev => prev - 1);
+        setSelectedOption(null);
+        checkmarkScale.value = 0;
+
+        // Reset position to left, then animate in
+        questionTranslateX.value = -50;
+        questionOpacity.value = 0;
+
+        questionTranslateX.value = withTiming(0, { duration: 300 });
+        questionOpacity.value = withTiming(1, { duration: 300 });
+
+        animateProgress(currentIndex, questions.length);
+      }, 150);
+    }
+  }, [currentIndex, questions.length, animateProgress]);
+
+  // Load questions
   const loadQuestions = useCallback(async () => {
     try {
       setLoading(true);
@@ -111,7 +281,6 @@ export default function QuizScreen() {
       }
 
       const { data } = await api.get('/era/questions');
-      // Extract questions from envelope
       const questionsData = data.questions || data;
       setQuestions(questionsData);
 
@@ -123,77 +292,55 @@ export default function QuizScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   const handleRetry = () => {
     hapticSelection();
     loadQuestions();
   };
 
-  const handleSelectOption = (optionIndex: number) => {
-    hapticLight();
-    const currentQuestion = questions[currentIndex];
-    setAnswers({
-      ...answers,
-      [currentQuestion.id]: optionIndex,
-    });
+  useEffect(() => {
+    loadQuestions();
+  }, []);
 
-    // Success haptic on final question answer
-    if (currentIndex === questions.length - 1) {
-      hapticSuccess();
+  // Initialize animations when questions load
+  useEffect(() => {
+    if (!loading && questions.length > 0) {
+      questionTranslateX.value = 0;
+      questionOpacity.value = 1;
+      animateProgress(1, questions.length);
     }
+  }, [loading, questions.length]);
 
-    // Auto-advance to next question after short delay
-    setTimeout(() => {
-      if (currentIndex < questions.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-      }
-    }, 300);
-  };
-
-  const handleSubmit = async () => {
-    if (Object.keys(answers).length < questions.length) {
-      hapticError();
-      Alert.alert('Incomplete', 'Please answer all questions');
-      return;
+  // Start glow animation when all questions answered
+  useEffect(() => {
+    if (Object.keys(answers).length === questions.length && questions.length > 0) {
+      startGlowAnimation();
     }
+  }, [answers, questions.length, startGlowAnimation]);
 
-    // Medium haptic for major action
-    hapticMedium();
-    setSubmitting(true);
-    try {
-      const { data } = await api.post('/era/quiz', { answers });
-      hapticSuccess();
+  // Render step indicator dots (sliding window of 7)
+  const renderStepDots = useCallback(() => {
+    const totalDots = Math.min(7, questions.length);
+    const startIndex = Math.max(0, Math.min(currentIndex - 3, questions.length - totalDots));
 
-      // Increment guest usage if in guest mode
-      const guest = await isGuestMode();
-      if (guest) {
-        await incrementGuestQuizCount();
-        await incrementGuestUsage();
-      }
+    const dots = [];
+    for (let i = startIndex; i < startIndex + totalDots; i++) {
+      const isCompleted = i < currentIndex;
+      const isCurrent = i === currentIndex;
 
-      // Extract result ID from envelope: {error, data: {result, profile}}
-      const resultData = data.data || data;
-      const resultId = resultData.result?.id || resultData.id;
-
-      // Flag for celebration animation on home screen
-      await AsyncStorage.setItem('quiz_just_completed', 'true');
-      router.replace(`/(protected)/results/${resultId}`);
-    } catch (err: any) {
-      console.error('Failed to submit quiz:', err);
-      hapticError();
-      setSubmitting(false);
-      setError('Failed to submit quiz. Please try again.');
+      dots.push(
+        <View
+          key={i}
+          style={isCurrent ? { width: 8, height: 8, borderRadius: 4, backgroundColor: '#ec4899' } :
+            { width: 6, height: 6, borderRadius: 3, backgroundColor: isCompleted ? '#ec4899' : '#374151' }}
+        />
+      );
     }
-  };
+    return dots;
+  }, [currentIndex, questions.length]);
 
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      hapticLight();
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
+  // Loading state
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-950">
@@ -202,6 +349,7 @@ export default function QuizScreen() {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-gray-950">
@@ -216,132 +364,174 @@ export default function QuizScreen() {
     );
   }
 
+  // Empty state
   if (questions.length === 0) {
     return (
       <SafeAreaView className="flex-1 bg-gray-950">
         <View className="flex-1 items-center justify-center px-8">
           <Ionicons name="alert-circle-outline" size={64} color="#6b7280" />
           <Text className="text-gray-400 text-lg mt-4">No questions available</Text>
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.back()}
             className="mt-6 rounded-xl px-6 py-3"
             style={{ backgroundColor: '#ec4899' }}
           >
             <Text className="text-white font-semibold">Go Back</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
   }
 
   const currentQuestion = questions[currentIndex];
-  const progress = ((currentIndex + 1) / questions.length) * 100;
   const isLastQuestion = currentIndex === questions.length - 1;
+  const allAnswered = Object.keys(answers).length === questions.length;
   const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950">
-      {/* Submission Overlay */}
-      <SubmissionOverlay visible={submitting} />
-
-      {/* Header */}
-      <View className="px-6 py-4 border-b border-gray-800">
-        <View className="flex-row items-center justify-between mb-3">
-          <TouchableOpacity onPress={() => {
-            // Warning haptic for destructive action
+      {/* Progress Section */}
+      <View className="pt-4 px-6">
+        <View className="flex-row items-center justify-between mb-2">
+          <Pressable onPress={() => {
             hapticWarning();
             router.back();
           }}>
             <Ionicons name="close" size={28} color="#fff" />
-          </TouchableOpacity>
-          <Text className="text-lg font-semibold text-white">
-            Question {currentIndex + 1}/{questions.length}
+          </Pressable>
+          <Text className="text-sm text-gray-400 font-medium">
+            Question {currentIndex + 1} of {questions.length}
           </Text>
-          <View style={{ width: 28 }} />
+          <Text className="text-xs text-gray-500">
+            {Math.round(((currentIndex + 1) / questions.length) * 100)}%
+          </Text>
         </View>
 
-        {/* Progress Bar */}
+        {/* Animated Progress Bar */}
         <View className="h-2 bg-gray-800 rounded-full overflow-hidden">
-          <View
-            className="h-full"
-            style={{ width: `${progress}%`, backgroundColor: '#ec4899' }}
-          />
+          <Animated.View style={progressAnimatedStyle} className="h-full rounded-full overflow-hidden">
+            <LinearGradient
+              colors={['#ec4899', '#a855f7']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ flex: 1 }}
+            />
+          </Animated.View>
+        </View>
+
+        {/* Step Indicator Dots */}
+        <View className="flex-row justify-center mt-4" style={{ gap: 8 }}>
+          {renderStepDots()}
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6 py-6">
-        {/* Question */}
-        <Text className="text-2xl font-bold text-white mb-6">
+      {/* Animated Question Section */}
+      <Animated.View style={questionAnimatedStyle} className="flex-1 justify-center px-6">
+        <Text className="text-sm text-pink-400 font-semibold mb-2 text-center">
+          Question {currentIndex + 1}
+        </Text>
+        <Text className="text-2xl font-bold text-white text-center leading-tight">
           {currentQuestion.question}
         </Text>
+      </Animated.View>
 
-        {/* Options */}
-        <View>
-          {currentQuestion.options.map((option: QuizOption, index: number) => {
-            const isSelected = currentAnswer === index;
-            return (
-              <TouchableOpacity
-                key={index}
+      {/* Animated Options Section */}
+      <View className="px-6 pb-6">
+        {currentQuestion.options.map((option: QuizOption, index: number) => {
+          const isSelected = selectedOption === index;
+          const isPreviouslySelected = currentAnswer === index && selectedOption === null;
+          const hasSelection = selectedOption !== null;
+
+          return (
+            <Animated.View
+              key={index}
+              style={isSelected ? optionAnimatedStyle : undefined}
+              className="mb-3"
+            >
+              <Pressable
                 onPress={() => handleSelectOption(index)}
-                className="rounded-xl p-4 mb-3"
-                style={{
-                  borderWidth: 2,
-                  borderColor: isSelected ? '#ec4899' : '#374151',
-                  backgroundColor: isSelected ? 'rgba(236,72,153,0.1)' : '#111827',
-                }}
+                disabled={selectedOption !== null}
+                style={{ opacity: hasSelection && !isSelected ? 0.6 : 1 }}
+                className="rounded-2xl overflow-hidden"
               >
-                <View className="flex-row items-center">
-                  <View
-                    className="w-6 h-6 rounded-full items-center justify-center mr-3"
-                    style={{
-                      borderWidth: 2,
-                      borderColor: isSelected ? '#ec4899' : '#4b5563',
-                      backgroundColor: isSelected ? '#ec4899' : 'transparent',
-                    }}
-                  >
-                    {isSelected && (
-                      <Ionicons name="checkmark" size={16} color="#fff" />
-                    )}
-                  </View>
-                  <Text
-                    className="flex-1 text-base"
-                    style={{ color: isSelected ? '#f9a8d4' : '#d1d5db' }}
-                  >
+                <LinearGradient
+                  colors={isSelected || isPreviouslySelected ? ['#831843', '#581c87'] : ['#1f2937', '#374151']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  className="py-4 px-6 flex-row items-center justify-between"
+                >
+                  <Text className="text-white text-base font-medium flex-1">
                     {option.text}
                   </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </ScrollView>
 
-      {/* Navigation */}
-      <View className="px-6 py-4 border-t border-gray-800 flex-row" style={{ gap: 12 }}>
+                  {(isSelected || isPreviouslySelected) && (
+                    <Animated.View style={isSelected ? checkmarkAnimatedStyle : undefined}>
+                      <Ionicons name="checkmark-circle" size={24} color="#ec4899" />
+                    </Animated.View>
+                  )}
+                </LinearGradient>
+              </Pressable>
+            </Animated.View>
+          );
+        })}
+      </View>
+
+      {/* Navigation / Submit */}
+      <View className="px-6 pb-8 flex-row" style={{ gap: 12 }}>
         {currentIndex > 0 && (
-          <TouchableOpacity
+          <Pressable
             onPress={handlePrevious}
-            className="flex-1 bg-gray-800 rounded-xl py-4 items-center"
+            className="flex-1 bg-gray-800 rounded-2xl py-4 items-center"
           >
             <Text className="text-white font-semibold text-base">
               Previous
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
 
-        {isLastQuestion && Object.keys(answers).length === questions.length && (
-          <TouchableOpacity
+        {isLastQuestion && allAnswered && (
+          <Pressable
             onPress={handleSubmit}
             disabled={submitting}
-            className="flex-1 rounded-xl py-4 items-center"
-            style={{ backgroundColor: '#ec4899' }}
+            className="flex-1 rounded-2xl overflow-hidden"
           >
-            <Text className="text-white font-semibold text-base">
-              Get Results
-            </Text>
-          </TouchableOpacity>
+            <Animated.View style={glowAnimatedStyle}>
+              <LinearGradient
+                colors={['#ec4899', '#a855f7']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="py-4 flex-row items-center justify-center"
+              >
+                {submitting ? (
+                  <>
+                    <ActivityIndicator size="small" color="#ffffff" />
+                    <Text className="text-white text-lg font-bold ml-2">
+                      Discovering your era...
+                    </Text>
+                  </>
+                ) : (
+                  <Text className="text-white text-lg font-bold">
+                    Get Results
+                  </Text>
+                )}
+              </LinearGradient>
+            </Animated.View>
+          </Pressable>
         )}
       </View>
+
+      {/* Loading Overlay */}
+      <Animated.View
+        style={[overlayAnimatedStyle, { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }]}
+        pointerEvents={submitting ? 'auto' : 'none'}
+      >
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <ActivityIndicator size="large" color="#ec4899" />
+          <Text className="text-lg text-white mt-4 font-medium">
+            Discovering your era...
+          </Text>
+        </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
