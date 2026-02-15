@@ -3,14 +3,19 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   FlatList,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import api from '../../../lib/api';
-import { hapticError, hapticLight, hapticSelection, hapticSuccess } from '../../../lib/haptics';
+import { hapticError, hapticLight, hapticSelection, hapticSuccess, hapticWarning } from '../../../lib/haptics';
+import { useNetworkStatus } from '../../../lib/network';
+import { withRetry } from '../../../lib/retry';
 import Skeleton from '../../../components/Skeleton';
 import ErrorState from '../../../components/ErrorState';
 import ToastBanner from '../../../components/ToastBanner';
@@ -52,12 +57,17 @@ const HistorySkeleton: React.FC = () => (
 
 export default function HistoryScreen() {
   const router = useRouter();
+  const { isOnline, isChecking, checkNow } = useNetworkStatus();
+
   const [results, setResults] = useState<EraResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   useEffect(() => {
     loadResults();
@@ -67,25 +77,50 @@ export default function HistoryScreen() {
     try {
       if (isRefresh) {
         setRefreshing(true);
+        setRefreshError(null);
+
+        if (!isOnline) {
+          setRefreshError('No internet connection. Showing cached data.');
+          setRefreshing(false);
+          hapticWarning();
+          setTimeout(() => setRefreshError(null), 3000);
+          return;
+        }
       } else {
         setLoading(true);
       }
       setError(null);
 
-      const { data } = await api.get('/era/results');
-      // Extract from envelope
-      const resultsData = data.results || data;
-      setResults(Array.isArray(resultsData) ? resultsData : []);
+      if (isRefresh) {
+        const retryResult = await withRetry(
+          async () => {
+            const { data } = await api.get('/era/results');
+            return data;
+          },
+          { maxRetries: 3, initialDelayMs: 1000 }
+        );
 
-      if (!isRefresh) {
+        if (retryResult.success && retryResult.data) {
+          const resultsData = retryResult.data.results || retryResult.data;
+          setResults(Array.isArray(resultsData) ? resultsData : []);
+          setRetryCount(0);
+          hapticSuccess();
+        } else {
+          setRetryCount(prev => prev + 1);
+          setRefreshError('Failed to load history. Please try again.');
+          hapticError();
+        }
+      } else {
+        const { data } = await api.get('/era/results');
+        const resultsData = data.results || data;
+        setResults(Array.isArray(resultsData) ? resultsData : []);
         hapticSuccess();
       }
     } catch (err: any) {
       console.error('Failed to load results:', err);
       if (isRefresh) {
-        // Show toast for refresh failure
-        setToastMessage('Failed to refresh history');
-        setShowToast(true);
+        setRetryCount(prev => prev + 1);
+        setRefreshError('An error occurred. Pull down to retry.');
         hapticError();
       } else {
         setError('Failed to load your quiz history');
@@ -95,7 +130,27 @@ export default function HistoryScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [isOnline]);
+
+  const handleManualRetry = useCallback(async () => {
+    setIsRetrying(true);
+    setRefreshError(null);
+
+    await checkNow();
+    await loadResults(true);
+
+    setIsRetrying(false);
+  }, [checkNow, loadResults]);
+
+  // Auto-dismiss error after 3 seconds if retryCount < 3
+  useEffect(() => {
+    if (refreshError && retryCount < 3) {
+      const timer = setTimeout(() => {
+        setRefreshError(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [refreshError, retryCount]);
 
   const handleRetry = () => {
     hapticSelection();
@@ -184,6 +239,46 @@ export default function HistoryScreen() {
         type="error"
         onDismiss={handleDismissToast}
       />
+
+      {/* Offline Banner */}
+      {!isOnline && (
+        <View className="bg-red-900/50 border border-red-700 rounded-xl mx-4 mt-2 p-3 flex-row items-center gap-2">
+          <Ionicons name="cloud-offline" size={20} color="#f87171" />
+          <Text className="text-red-400 text-sm flex-1">
+            You're offline. Viewing cached history.
+          </Text>
+        </View>
+      )}
+
+      {/* Refresh Error Banner */}
+      {refreshError && (
+        <Animated.View
+          entering={FadeIn.duration(300)}
+          exiting={FadeOut.duration(300)}
+          className="bg-red-900/30 border border-red-800 rounded-xl mx-4 p-3 mb-2 mt-2"
+        >
+          <Text className="text-red-400 text-sm text-center">
+            Failed to refresh history. Pull down to try again.
+          </Text>
+        </Animated.View>
+      )}
+
+      {/* Manual Retry Button */}
+      {retryCount >= 3 && refreshError && (
+        <Pressable
+          onPress={handleManualRetry}
+          className="bg-purple-600 rounded-xl py-3 px-6 mx-4 mt-2 flex-row items-center justify-center gap-2 active:opacity-80"
+        >
+          {isRetrying ? (
+            <ActivityIndicator color="#ffffff" size="small" />
+          ) : (
+            <>
+              <Ionicons name="refresh" size={18} color="#ffffff" />
+              <Text className="text-white font-semibold">Retry Now</Text>
+            </>
+          )}
+        </Pressable>
+      )}
 
       {/* Header */}
       <View className="px-6 py-4 border-b border-gray-800">

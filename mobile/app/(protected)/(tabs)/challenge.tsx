@@ -9,12 +9,16 @@ import {
   Easing,
   ActivityIndicator,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import ReanimatedAnimated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { hapticSuccess, hapticError, hapticSelection, hapticWarning } from '../../../lib/haptics';
+import { useNetworkStatus } from '../../../lib/network';
+import { withRetry } from '../../../lib/retry';
 import api from '../../../lib/api';
 import Skeleton from '../../../components/Skeleton';
 import ErrorState from '../../../components/ErrorState';
@@ -149,6 +153,9 @@ const ChallengeSkeleton: React.FC = () => (
 // ============================================
 
 export default function ChallengeScreen() {
+  // Network & Retry
+  const { isOnline, isChecking, checkNow } = useNetworkStatus();
+
   // State
   const [challenge, setChallenge] = useState<any>(null);
   const [streakData, setStreakData] = useState<Streak | null>(null);
@@ -164,6 +171,10 @@ export default function ChallengeScreen() {
   const [currentMilestone, setCurrentMilestone] = useState<StreakBadge | null>(null);
   const [celebratedMilestones, setCelebratedMilestones] = useState<string[]>([]);
   const [expandedHistoryIds, setExpandedHistoryIds] = useState<string[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // Animation refs
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -349,6 +360,77 @@ export default function ChallengeScreen() {
     fetchChallengeData();
   };
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setRefreshError(null);
+
+    if (!isOnline) {
+      setRefreshError('No internet connection. Please connect to view challenges.');
+      setRefreshing(false);
+      hapticWarning();
+      return;
+    }
+
+    try {
+      const result = await withRetry(
+        async () => {
+          const [challengeRes, streakRes] = await Promise.all([
+            api.get('/challenges/daily'),
+            api.get('/challenges/streak'),
+          ]);
+          return { challengeRes, streakRes };
+        },
+        { maxRetries: 3, initialDelayMs: 1000 }
+      );
+
+      if (result.success && result.data) {
+        const challengeData = result.data.challengeRes.data.challenge || result.data.challengeRes.data;
+        setChallenge(challengeData);
+
+        const streak = result.data.streakRes.data.streak || result.data.streakRes.data;
+        setStreakData(streak);
+        setBadges(result.data.streakRes.data.badges || []);
+
+        const hasResponded = challengeData.response && challengeData.response !== '';
+        setChallengeCompleted(hasResponded);
+        if (hasResponded) {
+          setResponse(challengeData.response);
+        }
+
+        // Refresh history
+        try {
+          const historyRes = await api.get('/challenges/history?limit=5');
+          setHistory(historyRes.data.challenges || []);
+        } catch {
+          // History fetch is optional
+        }
+
+        setRetryCount(0);
+        hapticSuccess();
+      } else {
+        setRetryCount(prev => prev + 1);
+        setRefreshError('Failed to load challenge. Please try again.');
+        hapticError();
+      }
+    } catch (err) {
+      setRetryCount(prev => prev + 1);
+      setRefreshError('An error occurred. Pull down to retry.');
+      hapticError();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [isOnline]);
+
+  const handleManualRetry = useCallback(async () => {
+    setIsRetrying(true);
+    setRefreshError(null);
+
+    await checkNow();
+    await onRefresh();
+
+    setIsRetrying(false);
+  }, [checkNow, onRefresh]);
+
   // ============================================
   // EFFECTS
   // ============================================
@@ -387,6 +469,16 @@ export default function ChallengeScreen() {
       ).start();
     }
   }, [streakData, pulseAnim]);
+
+  // Auto-dismiss error after 3 seconds if retryCount < 3
+  useEffect(() => {
+    if (refreshError && retryCount < 3) {
+      const timer = setTimeout(() => {
+        setRefreshError(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [refreshError, retryCount]);
 
   // ============================================
   // LOADING STATE
@@ -430,7 +522,54 @@ export default function ChallengeScreen() {
       <ScrollView
         className="flex-1 px-6 pt-4"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#ec4899"
+          />
+        }
       >
+        {/* Offline Banner */}
+        {!isOnline && (
+          <View className="bg-red-900/50 border border-red-700 rounded-xl mt-2 mb-2 p-3 flex-row items-center gap-2">
+            <Ionicons name="cloud-offline" size={20} color="#f87171" />
+            <Text className="text-red-400 text-sm flex-1">
+              You're offline. Challenges require internet connection.
+            </Text>
+          </View>
+        )}
+
+        {/* Refresh Error Banner */}
+        {refreshError && (
+          <ReanimatedAnimated.View
+            entering={FadeIn.duration(300)}
+            exiting={FadeOut.duration(300)}
+            className="bg-red-900/30 border border-red-800 rounded-xl p-3 mb-2 mt-2"
+          >
+            <Text className="text-red-400 text-sm text-center">
+              Failed to load challenge. Pull down to try again.
+            </Text>
+          </ReanimatedAnimated.View>
+        )}
+
+        {/* Manual Retry Button */}
+        {retryCount >= 3 && refreshError && (
+          <Pressable
+            onPress={handleManualRetry}
+            className="bg-purple-600 rounded-xl py-3 px-6 mt-2 mb-2 flex-row items-center justify-center gap-2 active:opacity-80"
+          >
+            {isRetrying ? (
+              <ActivityIndicator color="#ffffff" size="small" />
+            ) : (
+              <>
+                <Ionicons name="refresh" size={18} color="#ffffff" />
+                <Text className="text-white font-semibold">Retry Now</Text>
+              </>
+            )}
+          </Pressable>
+        )}
+
         {/* Header Section */}
         <View className="flex-row items-center justify-between mb-2">
           <Text className="text-2xl font-bold text-white">Daily Challenge</Text>
