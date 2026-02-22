@@ -102,15 +102,46 @@ const getDecadeColors = (option: string) => {
   return DEFAULT_DECADE;
 };
 
+const ORDERED_DECADES = ['1920s', '1930s', '1940s', '1950s', '1960s', '1970s', '1980s', '1990s', '2000s', '2010s', '2020s'];
+
+const getDecadeDistance = (userAnswer: string, correctDecade: string): number => {
+  const userIdx = ORDERED_DECADES.indexOf(userAnswer);
+  const correctIdx = ORDERED_DECADES.indexOf(correctDecade);
+  if (userIdx === -1 || correctIdx === -1) return -1;
+  return Math.abs(userIdx - correctIdx);
+};
+
+const getProximityLabel = (distance: number): string => {
+  if (distance === 0) return '';
+  if (distance === 1) return 'So close — just one decade off!';
+  if (distance === 2) return 'Almost — two decades off';
+  return `${distance} decades off`;
+};
+
 const generateShareText = (
-  challenge: { correct_decade?: string; is_correct?: boolean; challenge_date?: string },
+  challenge: { correct_decade?: string; is_correct?: boolean; user_answer?: string; challenge_date?: string },
   streak: number
 ): string => {
-  const emoji = challenge.is_correct ? '✅' : '❌';
+  const correctIdx = ORDERED_DECADES.indexOf(challenge.correct_decade || '');
+  const userIdx = ORDERED_DECADES.indexOf(challenge.user_answer || '');
   const dateStr = challenge.challenge_date
     ? new Date(challenge.challenge_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  return `📅 EraCheck Daily (${dateStr})\n\n${emoji} ${challenge.correct_decade || '?'}\n🔥 ${streak} day streak\n\nCan you guess the decade? 📸\n#EraCheck`;
+
+  // Build emoji timeline grid (like Wordle)
+  const timeline = ORDERED_DECADES.map((_, i) => {
+    if (i === correctIdx && i === userIdx) return '✅';
+    if (i === correctIdx) return '🟡';
+    if (i === userIdx) return '🔴';
+    return '⬛';
+  }).join('');
+
+  const distance = (correctIdx !== -1 && userIdx !== -1) ? Math.abs(correctIdx - userIdx) : -1;
+  const resultLine = challenge.is_correct
+    ? 'Nailed it! 🎯'
+    : distance === 1 ? 'One decade off! 😅' : `${distance > 0 ? distance + ' decades off' : 'Missed it'} 📅`;
+
+  return `EraCheck Daily (${dateStr})\n${timeline}\n${resultLine}\n🔥 ${streak} day streak\n\nCan you guess the decade?\n#EraCheck`;
 };
 
 const STREAK_BADGES: StreakBadge[] = [
@@ -174,6 +205,7 @@ export default function ChallengeScreen() {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const resultAnim = useRef(new Animated.Value(0)).current;
+  const photoOverlayOpacity = useRef(new Animated.Value(1)).current;
 
   // ============================================
   // DATA FETCHING
@@ -196,6 +228,16 @@ export default function ChallengeScreen() {
 
       const challengeData: ChallengeData = challengeRes.data.challenge || challengeRes.data;
       setChallenge(challengeData);
+
+      // Film development entrance animation for the photo
+      photoOverlayOpacity.setValue(1);
+      Animated.timing(photoOverlayOpacity, {
+        toValue: 0,
+        duration: 1000,
+        delay: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
 
       const streak = streakRes.data.streak || streakRes.data;
       setStreakData(streak);
@@ -573,6 +615,23 @@ export default function ChallengeScreen() {
                 style={{ width: '100%', height: 280 }}
                 resizeMode="cover"
               />
+              {/* Film development overlay — fades out on load */}
+              <Animated.View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#1a1610', opacity: photoOverlayOpacity }}
+                pointerEvents="none"
+              />
+              {/* Vignette edges */}
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                pointerEvents="none"
+              >
+                <LinearGradient
+                  colors={['rgba(13,11,8,0.6)', 'transparent', 'transparent', 'rgba(13,11,8,0.6)']}
+                  locations={[0, 0.2, 0.8, 1]}
+                  start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                />
+              </View>
               {!challengeCompleted && (
                 <View
                   className="absolute top-3 right-3 rounded-full px-2 py-1 flex-row items-center"
@@ -693,11 +752,20 @@ export default function ChallengeScreen() {
                 </View>
               ) : null}
 
-              {/* Your answer if wrong */}
-              {!challenge.is_correct && (
-                <Text className="text-gray-400 text-xs text-center mb-3">
-                  You answered: <Text className="text-gray-200">{challenge.user_answer}</Text>
-                </Text>
+              {/* Proximity feedback for wrong answers */}
+              {!challenge.is_correct && challenge.user_answer && challenge.correct_decade && (
+                <View
+                  className="rounded-xl px-4 py-2 mb-3 flex-row items-center justify-center gap-2"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+                >
+                  <Ionicons name="navigate" size={14} color="#fbbf24" />
+                  <Text className="text-yellow-300 text-sm font-medium">
+                    {getProximityLabel(getDecadeDistance(challenge.user_answer, challenge.correct_decade))}
+                  </Text>
+                  <Text className="text-gray-500 text-xs">
+                    (You: {challenge.user_answer})
+                  </Text>
+                </View>
               )}
 
               {/* Share button */}
