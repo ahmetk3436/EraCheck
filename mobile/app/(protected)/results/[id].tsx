@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -135,12 +135,14 @@ const AnimatedScoreBar: React.FC<{
     opacity: opacity.value,
   }));
 
+  const isTopScore = index === 0;
+
   return (
     <View className="mb-4">
       <View className="flex-row justify-between mb-1.5">
-        <Text className="text-sm text-gray-300">{era}</Text>
+        <Text className={`text-sm ${isTopScore ? 'text-white font-semibold' : 'text-gray-300'}`}>{era}</Text>
         <Animated.Text
-          className="text-sm font-semibold text-white"
+          className={`text-sm font-semibold ${isTopScore ? 'text-white' : 'text-gray-400'}`}
           style={animatedTextStyle}
         >
           {Math.round(score)}%
@@ -249,7 +251,6 @@ const ComparisonBar: React.FC<{
 // Main Results Screen
 export default function ResultsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const { hapticSuccess, hapticError, hapticSelection } = useHaptics();
 
   const [result, setResult] = useState<EraResult | null>(null);
@@ -379,7 +380,8 @@ export default function ResultsScreen() {
 
   // Convert scores object to sorted array with display info
   const getFilteredScores = (scores: Record<string, number>): EraScore[] => {
-    const entries = Object.entries(scores);
+    const entries = Object.entries(scores)
+      .filter(([key, val]) => eraDisplayNames[key] && typeof val === 'number' && !isNaN(val));
     // Calculate max score for percentage normalization
     const maxScore = Math.max(...entries.map(([, v]) => v), 1);
 
@@ -398,9 +400,10 @@ export default function ResultsScreen() {
       .slice(0, 5);
   };
 
-  // Build comparison data from score breakdown (simulated distribution)
+  // Build comparison data from score breakdown (only valid era keys)
   const getComparisonData = (scores: Record<string, number>) => {
-    const entries = Object.entries(scores);
+    const entries = Object.entries(scores)
+      .filter(([key, val]) => eraDisplayNames[key] && typeof val === 'number' && !isNaN(val));
     const total = entries.reduce((sum, [, v]) => sum + v, 0) || 1;
 
     return entries
@@ -456,6 +459,20 @@ export default function ResultsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#0F0F1A]">
+      {/* Top Navigation Bar */}
+      <View className="flex-row items-center justify-between px-5 pt-2 pb-3">
+        <Pressable
+          onPress={() => router.replace('/(protected)/(tabs)')}
+          className="flex-row items-center"
+          style={{ paddingVertical: 4, paddingHorizontal: 2 }}
+        >
+          <Ionicons name="chevron-back" size={24} color="#ec4899" />
+          <Text className="text-base font-medium ml-1" style={{ color: '#ec4899' }}>Home</Text>
+        </Pressable>
+        <Text className="text-sm text-gray-500">Your Result</Text>
+        <View style={{ width: 70 }} />
+      </View>
+
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
@@ -476,7 +493,14 @@ export default function ResultsScreen() {
           />
 
           {/* Emoji */}
-          <View className="w-28 h-28 rounded-full items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
+          <View
+            className="w-28 h-28 rounded-full items-center justify-center"
+            style={{
+              backgroundColor: result.era_color ? `${result.era_color}30` : 'rgba(255,255,255,0.05)',
+              borderWidth: 2,
+              borderColor: result.era_color ? `${result.era_color}60` : 'rgba(255,255,255,0.1)',
+            }}
+          >
             <AnimatedEmoji emoji={result.era_emoji} />
           </View>
 

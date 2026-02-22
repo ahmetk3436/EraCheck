@@ -740,13 +740,23 @@ export default function ChallengeScreen() {
               {challenge.fun_fact ? (
                 <View
                   className="rounded-2xl p-4 mb-4"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
+                  style={{
+                    backgroundColor: 'rgba(120,53,15,0.35)',
+                    borderLeftWidth: 4,
+                    borderLeftColor: '#f59e0b',
+                    borderTopWidth: 0.5,
+                    borderRightWidth: 0.5,
+                    borderBottomWidth: 0.5,
+                    borderTopColor: 'rgba(245,158,11,0.25)',
+                    borderRightColor: 'rgba(245,158,11,0.25)',
+                    borderBottomColor: 'rgba(245,158,11,0.25)',
+                  }}
                 >
                   <View className="flex-row items-center gap-2 mb-2">
                     <Ionicons name="bulb" size={16} color="#fbbf24" />
-                    <Text className="text-yellow-300 text-xs font-semibold uppercase tracking-wider">Fun Fact</Text>
+                    <Text className="text-yellow-300 text-xs font-semibold uppercase tracking-wider">Did You Know?</Text>
                   </View>
-                  <Text className="text-gray-100 text-sm leading-6">
+                  <Text className="text-amber-100 text-sm leading-6">
                     {challenge.fun_fact}
                   </Text>
                 </View>

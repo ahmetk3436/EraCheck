@@ -3,11 +3,12 @@ import {
   View,
   Text,
   Pressable,
+  ScrollView,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -62,7 +63,6 @@ const QuestionSkeleton: React.FC = () => (
 );
 
 export default function QuizScreen() {
-  const router = useRouter();
   const { incrementGuestUsage } = useAuth();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -184,12 +184,12 @@ export default function QuizScreen() {
       hapticSuccess();
     }
 
-    // Auto-advance after delay
+    // Auto-advance after delay — 500ms feels more intentional than 300ms
     setTimeout(() => {
       if (currentIndex < questions.length - 1) {
         advanceToNextQuestion();
       }
-    }, 300);
+    }, 500);
   }, [selectedOption, questions, currentIndex, advanceToNextQuestion]);
 
   // Handle submit
@@ -288,7 +288,14 @@ export default function QuizScreen() {
     } catch (err: any) {
       console.error('Failed to load questions:', err);
       hapticError();
-      setError('Could not load quiz');
+      const msg = err?.message || '';
+      if (msg.includes('refresh token') || msg.includes('401') || err?.response?.status === 401) {
+        setError('Please sign in to take the quiz');
+      } else if (msg.includes('Network Error')) {
+        setError('No internet connection. Check your network and try again.');
+      } else {
+        setError('Could not load quiz. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -351,14 +358,16 @@ export default function QuizScreen() {
 
   // Error state
   if (error) {
+    const isAuthError = error.includes('sign in');
     return (
       <SafeAreaView className="flex-1 bg-gray-950">
         <ErrorState
-          icon="help-buoy-outline"
-          title="Could Not Load Quiz"
-          message="We couldn't load the quiz questions"
-          retryText="Try Again"
-          onRetry={handleRetry}
+          icon={isAuthError ? 'lock-closed-outline' : 'help-buoy-outline'}
+          title={isAuthError ? 'Sign In Required' : 'Could Not Load Quiz'}
+          message={error}
+          retryText={isAuthError ? 'Sign In' : 'Try Again'}
+          onRetry={isAuthError ? () => router.replace('/(auth)/login') : handleRetry}
+          onGoBack={() => router.back()}
         />
       </SafeAreaView>
     );
@@ -425,56 +434,81 @@ export default function QuizScreen() {
         </View>
       </View>
 
-      {/* Animated Question Section */}
-      <Animated.View style={questionAnimatedStyle} className="flex-1 justify-center px-6">
-        <Text className="text-sm text-pink-400 font-semibold mb-2 text-center">
-          Question {currentIndex + 1}
-        </Text>
-        <Text className="text-2xl font-bold text-white text-center leading-tight">
-          {currentQuestion.question}
-        </Text>
-      </Animated.View>
+      {/* Question + Options */}
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 16 }}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View style={questionAnimatedStyle}>
+          <Text className="text-sm text-pink-400 font-semibold mb-2 text-center">
+            Question {currentIndex + 1}
+          </Text>
+          <Text className="text-2xl font-bold text-white text-center leading-tight mb-8">
+            {currentQuestion.question}
+          </Text>
 
-      {/* Animated Options Section */}
-      <View className="px-6 pb-6">
-        {currentQuestion.options.map((option: QuizOption, index: number) => {
-          const isSelected = selectedOption === index;
-          const isPreviouslySelected = currentAnswer === index && selectedOption === null;
-          const hasSelection = selectedOption !== null;
+          {/* Options */}
+          {currentQuestion.options.map((option: QuizOption, index: number) => {
+            const isSelected = selectedOption === index;
+            const isPreviouslySelected = currentAnswer === index && selectedOption === null;
+            const hasSelection = selectedOption !== null;
 
-          return (
-            <Animated.View
-              key={index}
-              style={isSelected ? optionAnimatedStyle : undefined}
-              className="mb-3"
-            >
-              <Pressable
-                onPress={() => handleSelectOption(index)}
-                disabled={selectedOption !== null}
-                style={{ opacity: hasSelection && !isSelected ? 0.6 : 1 }}
-                className="rounded-2xl overflow-hidden"
+            return (
+              <Animated.View
+                key={index}
+                style={isSelected ? optionAnimatedStyle : undefined}
+                className="mb-3"
               >
-                <LinearGradient
-                  colors={isSelected || isPreviouslySelected ? ['#831843', '#581c87'] : ['#1f2937', '#374151']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  className="py-4 px-6 flex-row items-center justify-between"
+                <Pressable
+                  onPress={() => handleSelectOption(index)}
+                  disabled={selectedOption !== null}
+                  style={[
+                    {
+                      opacity: hasSelection && !isSelected ? 0.5 : 1,
+                      borderWidth: isSelected || isPreviouslySelected ? 2 : 1,
+                      borderColor: isSelected || isPreviouslySelected ? '#ec4899' : 'rgba(255,255,255,0.1)',
+                      borderRadius: 16,
+                      overflow: 'hidden',
+                    },
+                  ]}
                 >
-                  <Text className="text-white text-base font-medium flex-1">
-                    {option.text}
-                  </Text>
-
-                  {(isSelected || isPreviouslySelected) && (
-                    <Animated.View style={isSelected ? checkmarkAnimatedStyle : undefined}>
-                      <Ionicons name="checkmark-circle" size={24} color="#ec4899" />
-                    </Animated.View>
-                  )}
-                </LinearGradient>
-              </Pressable>
-            </Animated.View>
-          );
-        })}
-      </View>
+                  <LinearGradient
+                    colors={isSelected || isPreviouslySelected ? ['rgba(236,72,153,0.25)', 'rgba(168,85,247,0.25)'] : ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.02)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    className="py-4 px-5 flex-row items-center"
+                  >
+                    <View
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        backgroundColor: isSelected || isPreviouslySelected ? '#ec4899' : 'rgba(255,255,255,0.08)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: 14,
+                      }}
+                    >
+                      {isSelected || isPreviouslySelected ? (
+                        <Ionicons name="checkmark" size={18} color="#fff" />
+                      ) : (
+                        <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, fontWeight: '600' }}>
+                          {String.fromCharCode(65 + index)}
+                        </Text>
+                      )}
+                    </View>
+                    <Text className="text-white text-base font-medium flex-1">
+                      {option.text}
+                    </Text>
+                  </LinearGradient>
+                </Pressable>
+              </Animated.View>
+            );
+          })}
+        </Animated.View>
+      </ScrollView>
 
       {/* Navigation / Submit */}
       <View className="px-6 pb-8 flex-row" style={{ gap: 12 }}>
@@ -511,7 +545,7 @@ export default function QuizScreen() {
                   </>
                 ) : (
                   <Text className="text-white text-lg font-bold">
-                    Get Results
+                    Reveal My Era ✨
                   </Text>
                 )}
               </LinearGradient>
