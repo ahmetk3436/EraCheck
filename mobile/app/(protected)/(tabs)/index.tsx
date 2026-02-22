@@ -9,7 +9,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -156,7 +156,6 @@ const ConfettiPiece: React.FC<ConfettiPieceProps> = ({ delay, startX, color, siz
 };
 
 export default function QuizHomeScreen() {
-  const router = useRouter();
   const { user, isGuest, guestUsageCount, canUseFeature, isAuthenticated } = useAuth();
   const { isSubscribed } = useSubscription();
 
@@ -582,79 +581,48 @@ export default function QuizHomeScreen() {
 
           {/* === START QUIZ CTA BUTTON === */}
           <Pressable onPress={handleStartQuiz} className="mb-6">
-            <Animated.View style={glowAnimatedStyle}>
-              <LinearGradient
-                colors={['#ec4899', '#f43f5e']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="rounded-2xl py-6 px-6"
-                style={{
-                  shadowColor: '#ec4899',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.5,
-                  shadowRadius: 20,
-                  elevation: 10,
-                }}
-              >
-                <View className="flex-row items-center justify-center">
-                  <Ionicons name="sparkles" size={28} color="white" />
-                  <Text className="text-xl font-bold text-white ml-3">
-                    Discover Your Era
-                  </Text>
-                </View>
-                <Text className="text-sm text-center mt-2" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                  15 questions • 2 min
+            <LinearGradient
+              colors={['#A855F7', '#EC4899']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="rounded-2xl py-5 px-6"
+              style={{
+                shadowColor: '#A855F7',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.4,
+                shadowRadius: 16,
+                elevation: 10,
+              }}
+            >
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="sparkles" size={26} color="white" />
+                <Text className="text-xl font-bold text-white ml-3">
+                  Discover Your Era
                 </Text>
-              </LinearGradient>
-            </Animated.View>
+              </View>
+              <Text className="text-sm text-center mt-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                15 questions  ·  2 min  ·  Free
+              </Text>
+            </LinearGradient>
           </Pressable>
 
-          {/* === BENTO GRID INFO CARDS === */}
-          <Text className="text-lg font-bold text-white mb-3">Why EraCheck?</Text>
-          <View className="flex-row flex-wrap gap-3 mb-6">
-
-            {/* Large card - 10 Unique Eras */}
-            <GlassCard variant="glass" className="w-full p-5">
-              <View className="flex-row items-center">
-                <View
-                  className="w-12 h-12 rounded-xl items-center justify-center"
-                  style={{ backgroundColor: 'rgba(139, 92, 246, 0.2)' }}
-                >
-                  <Ionicons name="color-palette" size={28} color="#8b5cf6" />
-                </View>
-                <View className="ml-4 flex-1">
-                  <Text className="text-base font-bold text-white">10 Unique Eras</Text>
-                  <Text className="text-xs text-gray-400 mt-1">
-                    From Renaissance to Digital Age
-                  </Text>
-                </View>
-              </View>
-            </GlassCard>
-
-            {/* Two smaller cards side by side */}
-            <GlassCard variant="glass" className="w-[48%] p-4">
-              <View
-                className="w-10 h-10 rounded-lg items-center justify-center mb-2"
-                style={{ backgroundColor: 'rgba(236, 72, 153, 0.2)' }}
-              >
-                <Ionicons name="finger-print" size={24} color="#ec4899" />
-              </View>
-              <Text className="text-base font-bold text-white">Personalized</Text>
-              <Text className="text-xs text-gray-400 mt-1">Tailored to your vibe</Text>
-            </GlassCard>
-
-            <GlassCard variant="glass" className="w-[48%] p-4">
-              <View
-                className="w-10 h-10 rounded-lg items-center justify-center mb-2"
-                style={{ backgroundColor: 'rgba(34, 197, 94, 0.2)' }}
-              >
-                <Ionicons name="people" size={24} color="#22c55e" />
-              </View>
-              <Text className="text-base font-bold text-white">Share & Compare</Text>
-              <Text className="text-xs text-gray-400 mt-1">Show off your era</Text>
-            </GlassCard>
-
-          </View>
+          {/* === QUICK STATS === */}
+          {latestResult && (
+            <View className="flex-row gap-3 mb-6">
+              <GlassCard variant="glass" className="flex-1 p-4 items-center">
+                <Text className="text-2xl font-black text-white">{currentStreak}</Text>
+                <Text className="text-xs text-gray-400 mt-1">day streak</Text>
+              </GlassCard>
+              <GlassCard variant="glass" className="flex-1 p-4 items-center">
+                <Text className="text-2xl font-black text-pink-400">{longestStreak}</Text>
+                <Text className="text-xs text-gray-400 mt-1">best streak</Text>
+              </GlassCard>
+              <GlassCard variant="glass" className="flex-1 p-4 items-center">
+                <Ionicons name="calendar" size={24} color="#a855f7" />
+                <Text className="text-xs text-gray-400 mt-1">play daily</Text>
+              </GlassCard>
+            </View>
+          )}
 
         </View>
       </ScrollView>
