@@ -2,6 +2,19 @@ import axios, {
   AxiosError,
   InternalAxiosRequestConfig,
 } from 'axios';
+// Sentry removed - using no-op stub
+const Sentry = {
+  init: () => {},
+  captureException: (e: any) => console.error(e),
+  captureMessage: (m: string) => console.warn(m),
+  setUser: (_u: any) => {},
+  addBreadcrumb: (_b: any) => {},
+  withScope: (cb: any) => cb({ setExtra: () => {}, setTag: () => {} }),
+  Native: { wrap: (c: any) => c },
+  wrap: (c: any) => c,
+  ReactNavigationInstrumentation: class {},
+  ReactNativeTracing: class {},
+};
 import {
   getAccessToken,
   getRefreshToken,
@@ -9,13 +22,34 @@ import {
   clearTokens,
 } from './storage';
 
+const APP_ID = 'eracheck';
+
+// Protected app routes: /api/p/...
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api';
+  process.env.EXPO_PUBLIC_API_URL || 'http://89.47.113.196:8099/api/p';
+
+// Auth/public routes: /api/... (strip /p suffix if present)
+const AUTH_BASE_URL = API_BASE_URL.endsWith('/p')
+  ? API_BASE_URL.slice(0, -2)
+  : API_BASE_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15000,
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    'X-App-ID': APP_ID,
+  },
+});
+
+// Separate instance for auth/public endpoints (/api/auth/..., /api/health, etc.)
+export const authApi = axios.create({
+  baseURL: AUTH_BASE_URL,
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+    'X-App-ID': APP_ID,
+  },
 });
 
 // Request interceptor: attach access token
@@ -74,9 +108,16 @@ api.interceptors.response.use(
           throw new Error('No refresh token available');
         }
 
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refresh_token: refreshToken,
-        });
+        const { data } = await axios.post(
+          `${AUTH_BASE_URL}/auth/refresh`,
+          { refresh_token: refreshToken },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-App-ID': APP_ID,
+            },
+          }
+        );
 
         await setTokens(data.access_token, data.refresh_token);
         processQueue(null, data.access_token);
@@ -91,6 +132,13 @@ api.interceptors.response.use(
         isRefreshing = false;
       }
     }
+
+    Sentry.captureException(error, {
+      tags: {
+        endpoint: error.config?.url,
+        status: String(error.response?.status ?? 'unknown'),
+      },
+    });
 
     return Promise.reject(error);
   }
