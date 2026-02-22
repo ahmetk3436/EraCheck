@@ -16,7 +16,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import ReanimatedAnimated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import ReanimatedAnimated, {
+  FadeIn,
+  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { hapticSuccess, hapticError, hapticSelection, hapticWarning } from '../../../lib/haptics';
 import { useNetworkStatus } from '../../../lib/network';
@@ -144,6 +152,114 @@ const generateShareText = (
   return `EraCheck Daily (${dateStr})\n${timeline}\n${resultLine}\n🔥 ${streak} day streak\n\nCan you guess the decade?\n#EraCheck`;
 };
 
+// Sepia/gold confetti colors — on-brand for vintage photo aesthetic
+const CONFETTI_COLORS = ['#C4912A', '#E8C87A', '#D4B896', '#F5D78A', '#8B7355', '#ffffff'];
+
+interface ConfettiPieceProps {
+  delay: number;
+  startX: number;
+  color: string;
+  size: number;
+}
+
+const ConfettiPiece: React.FC<ConfettiPieceProps> = ({ delay, startX, color, size }) => {
+  const { width: SW, height: SH } = Dimensions.get('window');
+  const ty = useSharedValue(0);
+  const tx = useSharedValue(0);
+  const op = useSharedValue(1);
+  const sc = useSharedValue(0);
+  const rot = useSharedValue(0);
+
+  useEffect(() => {
+    ty.value = withTiming(-SH * 0.65, { duration: 1300 + delay * 0.3 });
+    tx.value = withTiming(startX, { duration: 1300 + delay * 0.3 });
+    op.value = withSequence(
+      withTiming(1, { duration: delay + 600 }),
+      withTiming(0, { duration: 500 })
+    );
+    sc.value = withSpring(1, { damping: 8 });
+    rot.value = withTiming(360 * 2, { duration: 1300 + delay * 0.3 });
+  }, []);
+
+  const style = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: ty.value },
+      { translateX: tx.value },
+      { scale: sc.value },
+      { rotate: `${rot.value}deg` },
+    ],
+    opacity: op.value,
+  }));
+
+  return (
+    <ReanimatedAnimated.View
+      style={[
+        {
+          position: 'absolute',
+          width: size,
+          height: size,
+          borderRadius: size / 4,
+          backgroundColor: color,
+          left: SW / 2 - size / 2,
+          bottom: 80,
+          zIndex: 999,
+        },
+        style,
+      ]}
+    />
+  );
+};
+
+interface DecadeOptionButtonProps {
+  option: string;
+  colors: { bg: readonly [string, string]; border: string; text: string };
+  isSubmitting: boolean;
+  onPress: (option: string) => void;
+}
+
+const DecadeOptionButton: React.FC<DecadeOptionButtonProps> = React.memo(
+  ({ option, colors, isSubmitting, onPress }) => {
+    const scale = useSharedValue(1);
+
+    const animStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
+
+    const handlePress = () => {
+      scale.value = withSequence(
+        withTiming(0.92, { duration: 80 }),
+        withSpring(1.0, { damping: 10, stiffness: 200 })
+      );
+      onPress(option);
+    };
+
+    return (
+      <ReanimatedAnimated.View style={[animStyle, { width: '47%' }]}>
+        <Pressable onPress={handlePress} disabled={isSubmitting}>
+          <LinearGradient
+            colors={isSubmitting ? ['#1f2937', '#111827'] : colors.bg}
+            className="rounded-2xl py-5 items-center"
+            style={{ borderWidth: 1.5, borderColor: isSubmitting ? '#374151' : colors.border }}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#a855f7" />
+            ) : (
+              <>
+                <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800', letterSpacing: 0.5 }}>
+                  {option}
+                </Text>
+                <Text style={{ color: colors.text, fontSize: 11, opacity: 0.6, marginTop: 2 }}>
+                  {parseInt(option)}–{parseInt(option) + 9}
+                </Text>
+              </>
+            )}
+          </LinearGradient>
+        </Pressable>
+      </ReanimatedAnimated.View>
+    );
+  }
+);
+
 const STREAK_BADGES: StreakBadge[] = [
   { id: 'streak-3', name: 'Getting Started', description: 'Complete 3 daily challenges in a row', emoji: '\u{1F525}', milestone: 3, color: '#f97316' },
   { id: 'streak-7', name: 'Week Warrior', description: 'Complete 7 daily challenges in a row', emoji: '\u{26A1}', milestone: 7, color: '#eab308' },
@@ -201,6 +317,12 @@ export default function ChallengeScreen() {
   const [isRetrying, setIsRetrying] = useState(false);
   const [photoZoomVisible, setPhotoZoomVisible] = useState(false);
   const [challengeSharing, setChallengeSharing] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  const shakeTranslateX = useSharedValue(0);
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeTranslateX.value }],
+  }));
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -245,6 +367,8 @@ export default function ChallengeScreen() {
 
       const answered = !!challengeData.user_answer;
       setChallengeCompleted(answered);
+      // Show result card immediately (no entrance animation) for already-answered challenges
+      if (answered) resultAnim.setValue(1);
 
       try {
         const historyRes = await api.get('/challenges/history?limit=5');
@@ -302,8 +426,22 @@ export default function ChallengeScreen() {
       setChallenge(updated);
       setChallengeCompleted(true);
 
-      if (updated.is_correct) hapticSuccess();
-      else hapticError();
+      if (updated.is_correct) {
+        hapticSuccess();
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 2000);
+      } else {
+        hapticError();
+        // Shake the result card on wrong answer
+        shakeTranslateX.value = withSequence(
+          withTiming(-10, { duration: 60 }),
+          withTiming(10, { duration: 60 }),
+          withTiming(-7, { duration: 60 }),
+          withTiming(7, { duration: 60 }),
+          withTiming(-4, { duration: 60 }),
+          withTiming(0, { duration: 60 })
+        );
+      }
 
       Animated.spring(resultAnim, {
         toValue: 1,
@@ -563,7 +701,10 @@ export default function ChallengeScreen() {
                 <Ionicons name="timer" size={16} color="#f472b6" />
                 <Text className="text-gray-400 text-sm">Next challenge in</Text>
               </View>
-              <Text className="text-xl font-bold text-pink-400 tracking-wider" style={{ fontVariant: ['tabular-nums'] }}>
+              <Text
+                className={`text-xl font-black tracking-wider ${countdown.hours === 0 ? 'text-red-400' : 'text-pink-400'}`}
+                style={{ fontVariant: ['tabular-nums'] }}
+              >
                 {formatCountdown(countdown)}
               </Text>
             </View>
@@ -667,42 +808,21 @@ export default function ChallengeScreen() {
         {/* ─── DECADE OPTIONS ─── */}
         {!challengeCompleted && (
           <View className="flex-row flex-wrap gap-3 mb-5">
-            {options.map((option) => {
-              const colors = getDecadeColors(option);
-              return (
-                <Pressable
-                  key={option}
-                  onPress={() => handleAnswer(option)}
-                  disabled={isSubmitting}
-                  className="active:scale-95"
-                  style={{ width: '47%' }}
-                >
-                  <LinearGradient
-                    colors={isSubmitting ? ['#1f2937', '#111827'] : colors.bg}
-                    className="rounded-2xl py-5 items-center"
-                    style={{ borderWidth: 1.5, borderColor: isSubmitting ? '#374151' : colors.border }}
-                  >
-                    {isSubmitting ? (
-                      <ActivityIndicator size="small" color="#a855f7" />
-                    ) : (
-                      <>
-                        <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800', letterSpacing: 0.5 }}>
-                          {option}
-                        </Text>
-                        <Text style={{ color: colors.text, fontSize: 11, opacity: 0.6, marginTop: 2 }}>
-                          {parseInt(option)}–{parseInt(option) + 9}
-                        </Text>
-                      </>
-                    )}
-                  </LinearGradient>
-                </Pressable>
-              );
-            })}
+            {options.map((option) => (
+              <DecadeOptionButton
+                key={option}
+                option={option}
+                colors={getDecadeColors(option)}
+                isSubmitting={isSubmitting}
+                onPress={handleAnswer}
+              />
+            ))}
           </View>
         )}
 
         {/* ─── RESULT REVEAL ─── */}
         {challengeCompleted && challenge?.user_answer && (
+          <ReanimatedAnimated.View style={shakeStyle}>
           <Animated.View
             style={{ opacity: resultAnim, transform: [{ scale: resultAnim }] }}
             className="rounded-3xl overflow-hidden mb-5"
@@ -796,6 +916,7 @@ export default function ChallengeScreen() {
               </Pressable>
             </LinearGradient>
           </Animated.View>
+          </ReanimatedAnimated.View>
         )}
 
         {/* ─── BADGES ─── */}
@@ -915,6 +1036,21 @@ export default function ChallengeScreen() {
           </Animated.View>
         </View>
       </Modal>
+
+      {/* ─── CONFETTI (correct answer) ─── */}
+      {showConfetti && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
+          {Array.from({ length: 20 }, (_, i) => (
+            <ConfettiPiece
+              key={i}
+              delay={i * 60}
+              startX={(Math.random() - 0.5) * SCREEN_WIDTH * 0.8}
+              color={CONFETTI_COLORS[i % CONFETTI_COLORS.length]}
+              size={6 + (i % 5) * 3}
+            />
+          ))}
+        </View>
+      )}
     </SafeAreaView>
   );
 }
