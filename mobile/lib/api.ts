@@ -113,7 +113,10 @@ api.interceptors.response.use(
       try {
         const refreshToken = await getRefreshToken();
         if (!refreshToken) {
-          throw new Error('No refresh token available');
+          // Guest users don't have refresh tokens — silently fail, don't spam errors
+          await clearTokens();
+          if (onAuthFailed) onAuthFailed();
+          return Promise.reject(error);
         }
 
         const { data } = await axios.post(

@@ -527,6 +527,13 @@ export default function ChallengeScreen() {
       setIsLoading(true);
       setError(null);
 
+      // Guest users can't access challenge API — show prompt to sign up or use quiz
+      if (isGuest && !isAuthenticated) {
+        setError('Daily challenges require an account. Try the Quiz tab for free!');
+        setIsLoading(false);
+        return;
+      }
+
       const [challengeRes, streakRes] = await Promise.all([
         api.get('/challenges/daily'),
         api.get('/challenges/streak'),

@@ -582,25 +582,25 @@ export default function QuizHomeScreen() {
           {/* === START QUIZ CTA BUTTON === */}
           <Pressable onPress={handleStartQuiz} className="mb-6">
             <LinearGradient
-              colors={['#A855F7', '#EC4899']}
+              colors={['#831843', '#581c87']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              className="rounded-2xl py-5 px-6"
+              className="rounded-2xl py-5 px-6 border border-pink-500/30"
               style={{
-                shadowColor: '#A855F7',
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.4,
-                shadowRadius: 16,
-                elevation: 10,
+                shadowColor: '#ec4899',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 12,
+                elevation: 6,
               }}
             >
               <View className="flex-row items-center justify-center">
-                <Ionicons name="sparkles" size={26} color="white" />
+                <Ionicons name="sparkles" size={26} color="#ec4899" />
                 <Text className="text-xl font-bold text-white ml-3">
                   Discover Your Era
                 </Text>
               </View>
-              <Text className="text-sm text-center mt-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
+              <Text className="text-sm text-center mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 15 questions  ·  2 min  ·  Free
               </Text>
             </LinearGradient>
