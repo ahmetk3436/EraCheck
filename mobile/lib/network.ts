@@ -30,7 +30,9 @@ export function useNetworkStatus(): UseNetworkStatusReturn {
     setIsChecking(true);
 
     try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api';
+      const rawUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api';
+      // Health endpoint is at /api/health, not /api/p/health — strip /p suffix
+      const apiUrl = rawUrl.endsWith('/p') ? rawUrl.slice(0, -2) : rawUrl;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 

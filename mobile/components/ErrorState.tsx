@@ -10,6 +10,7 @@ interface ErrorStateProps {
   message?: string;
   retryText?: string;
   onRetry?: () => void;
+  onGoBack?: () => void;
   className?: string;
 }
 
@@ -19,11 +20,17 @@ const ErrorState: React.FC<ErrorStateProps> = ({
   message = 'Tap to retry',
   retryText = 'Try Again',
   onRetry,
+  onGoBack,
   className,
 }) => {
   const handleRetry = () => {
     hapticSelection();
     onRetry?.();
+  };
+
+  const handleGoBack = () => {
+    hapticSelection();
+    onGoBack?.();
   };
 
   return (
@@ -37,14 +44,24 @@ const ErrorState: React.FC<ErrorStateProps> = ({
       <Text className="text-sm text-gray-400 text-center mb-6">
         {message}
       </Text>
-      {onRetry && (
-        <Pressable
-          onPress={handleRetry}
-          className="bg-red-500/20 border border-red-500/30 rounded-xl px-6 py-3 active:opacity-70"
-        >
-          <Text className="text-red-400 font-medium">{retryText}</Text>
-        </Pressable>
-      )}
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        {onGoBack && (
+          <Pressable
+            onPress={handleGoBack}
+            className="bg-gray-800 border border-gray-700 rounded-xl px-6 py-3 active:opacity-70"
+          >
+            <Text className="text-gray-300 font-medium">Go Back</Text>
+          </Pressable>
+        )}
+        {onRetry && (
+          <Pressable
+            onPress={handleRetry}
+            className="bg-red-500/20 border border-red-500/30 rounded-xl px-6 py-3 active:opacity-70"
+          >
+            <Text className="text-red-400 font-medium">{retryText}</Text>
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 };

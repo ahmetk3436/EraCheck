@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -25,26 +25,34 @@ import Animated, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { hapticLight, hapticMedium } from '../lib/haptics';
+import { requestNotificationPermissions } from '../lib/notifications';
 
 const { width: screenWidth } = Dimensions.get('window');
 const PAGE_COUNT = 3;
 
 const AnimatedScrollView = Animated.ScrollView;
 
-const FEATURES = [
-  { emoji: '🎭', text: '10 Unique Aesthetic Eras' },
-  { emoji: '📊', text: 'Detailed Style Breakdown' },
-  { emoji: '🔥', text: 'Daily Challenges & Streaks' },
-];
+// Mock decade option for Page 1
+const MOCK_OPTIONS = ['1960s', '1970s', '1980s', '1990s'];
+const MOCK_OPTION_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  '1960s': { bg: '#3d3510', border: '#d4b800', text: '#ffe566' },
+  '1970s': { bg: '#3d2208', border: '#cc7700', text: '#ffcc44' },
+  '1980s': { bg: '#380038', border: '#cc00cc', text: '#ff66ff' },
+  '1990s': { bg: '#003838', border: '#006699', text: '#33ccff' },
+};
 
-const EMOJI_GRID = [
-  ['👸', '🦋', '✨'],
-  ['🌸', '💖', '🌙'],
-  ['🎀', '💫', '🌺'],
+// 7-day streak visual for Page 2
+const STREAK_DAYS = [
+  { done: true, correct: true },
+  { done: true, correct: true },
+  { done: true, correct: false },
+  { done: true, correct: true },
+  { done: true, correct: true },
+  { done: true, correct: true },
+  { done: false, correct: false }, // today
 ];
 
 export default function OnboardingScreen() {
-  const router = useRouter();
   const { continueAsGuest } = useAuth();
   const [currentPage, setCurrentPage] = useState(0);
   const [showScrollHint, setShowScrollHint] = useState(true);
@@ -72,12 +80,14 @@ export default function OnboardingScreen() {
     (scrollViewRef.current as any)?.scrollTo({ x: screenWidth * 2, animated: true });
   };
 
-  const handleTryFree = async () => {
+  const handleStartChallenge = async () => {
     hapticMedium();
     setIsNavigating(true);
     await AsyncStorage.setItem('onboarding_complete', 'true');
+    // Request notification permission (non-blocking)
+    requestNotificationPermissions().catch(() => {});
     await continueAsGuest();
-    router.replace('/(protected)/(tabs)');
+    router.replace('/(protected)/(tabs)/challenge');
   };
 
   const handleSignIn = async () => {
@@ -107,7 +117,7 @@ export default function OnboardingScreen() {
     }
   }, [showScrollHint, currentPage]);
 
-  // Animated styles for page elements
+  // Page animated styles
   const iconStyle0 = useAnimatedStyle(() => {
     const inputRange = [-screenWidth, 0, screenWidth];
     const scale = interpolate(scrollX.value, inputRange, [0.5, 1.0, 0.5], Extrapolation.CLAMP);
@@ -168,7 +178,7 @@ export default function OnboardingScreen() {
     return { opacity };
   });
 
-  // Dot indicator animated styles
+  // Dot indicators
   const dotStyle0 = useAnimatedStyle(() => {
     const inputRange = [-screenWidth, 0, screenWidth];
     const w = interpolate(scrollX.value, inputRange, [8, 24, 8], Extrapolation.CLAMP);
@@ -190,7 +200,6 @@ export default function OnboardingScreen() {
     return { width: w, opacity: o };
   });
 
-  // Scroll hint animated style
   const scrollHintStyle = useAnimatedStyle(() => {
     return {
       opacity: scrollHintOpacity.value,
@@ -204,7 +213,7 @@ export default function OnboardingScreen() {
       return (
         <Animated.View key={index} style={[styles.dot, animStyle]}>
           <LinearGradient
-            colors={['#EC4899', '#8B5CF6']}
+            colors={['#C4912A', '#E8C87A']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={StyleSheet.absoluteFill}
@@ -222,7 +231,7 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Skip Button - only on pages 0 and 1 */}
+      {/* Skip Button */}
       {currentPage < 2 && (
         <Pressable onPress={handleSkip} style={styles.skipButton}>
           <Text style={styles.skipText}>Skip</Text>
@@ -237,66 +246,156 @@ export default function OnboardingScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
-        {/* Page 1: Welcome */}
+        {/* ─── Page 1: THE HOOK — "Can you guess the decade?" ─── */}
         <View style={[styles.page, { width: screenWidth }]}>
+          {/* Sepia gradient background orb */}
           <LinearGradient
-            colors={['#EC4899', '#8B5CF6']}
+            colors={['#C4912A', '#704214']}
             style={styles.gradientOrb}
           />
-          <Animated.View style={[{ marginBottom: 24 }, iconStyle0]}>
-            <Ionicons name="sparkles" size={80} color="#F472B6" />
+          <Animated.View style={[{ marginBottom: 16, width: '100%', alignItems: 'center' }, iconStyle0]}>
+            {/* Mock photo card */}
+            <View style={{
+              width: screenWidth - 80,
+              height: 160,
+              borderRadius: 20,
+              backgroundColor: '#1A1610',
+              borderWidth: 1,
+              borderColor: 'rgba(196,168,130,0.3)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
+              <LinearGradient
+                colors={['rgba(196,145,42,0.15)', 'rgba(18,12,6,0.8)']}
+                style={StyleSheet.absoluteFill}
+              />
+              <Ionicons name="camera" size={48} color="rgba(196,168,130,0.4)" />
+              <Text style={{ color: 'rgba(196,168,130,0.6)', fontSize: 12, marginTop: 8 }}>
+                A photo from history...
+              </Text>
+            </View>
+            {/* Mock decade options (2x2) */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12, width: screenWidth - 80 }}>
+              {MOCK_OPTIONS.map((opt) => {
+                const c = MOCK_OPTION_COLORS[opt];
+                return (
+                  <View
+                    key={opt}
+                    style={{
+                      flex: 1,
+                      minWidth: '45%',
+                      backgroundColor: c.bg,
+                      borderWidth: 1,
+                      borderColor: c.border,
+                      borderRadius: 12,
+                      paddingVertical: 10,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: c.text, fontWeight: '800', fontSize: 16, fontFamily: 'PlayfairDisplay_800ExtraBold' }}>{opt}</Text>
+                  </View>
+                );
+              })}
+            </View>
           </Animated.View>
           <Animated.Text style={[styles.title, titleStyle0]}>
-            Discover Your Era
+            Can You Guess{'\n'}the Decade?
           </Animated.Text>
           <Animated.Text style={[styles.description, descStyle0]}>
-            Find out which aesthetic era defines your personality through our fun analysis
+            Every day, a new photo from history.{'\n'}Guess the decade. Build your streak.
           </Animated.Text>
         </View>
 
-        {/* Page 2: Features */}
+        {/* ─── Page 2: THE STREAK — "Build your daily habit" ─── */}
         <View style={[styles.page, { width: screenWidth }]}>
-          <Animated.View style={[{ marginBottom: 32 }, iconStyle1]}>
-            <Ionicons name="layers" size={60} color="#A78BFA" />
-          </Animated.View>
-          <Animated.Text style={[styles.title, titleStyle1]}>
-            How It Works
-          </Animated.Text>
-          <Animated.View style={[styles.featuresContainer, descStyle1]}>
-            {FEATURES.map((feature, idx) => (
-              <View key={idx} style={styles.featurePill}>
-                <Text style={styles.featureText}>
-                  {feature.emoji}  {feature.text}
-                </Text>
-              </View>
-            ))}
-          </Animated.View>
-        </View>
-
-        {/* Page 3: CTA */}
-        <View style={[styles.page, { width: screenWidth }]}>
-          <Animated.View style={iconStyle2}>
-            <View style={styles.emojiGrid}>
-              {EMOJI_GRID.map((row, rowIdx) => (
-                <View key={rowIdx} style={styles.emojiRow}>
-                  {row.map((emoji, colIdx) => (
-                    <Text key={colIdx} style={styles.emojiText}>
-                      {emoji}
+          <Animated.View style={[{ marginBottom: 24, alignItems: 'center' }, iconStyle1]}>
+            {/* Flame icon */}
+            <View style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: 'rgba(249,115,22,0.15)',
+              borderWidth: 2,
+              borderColor: 'rgba(249,115,22,0.4)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 20,
+            }}>
+              <Ionicons name="flame" size={44} color="#f97316" />
+            </View>
+            {/* 7-day streak calendar */}
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {STREAK_DAYS.map((day, i) => (
+                <View
+                  key={i}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: !day.done
+                      ? 'rgba(196,145,42,0.2)'
+                      : day.correct
+                      ? 'rgba(34,197,94,0.3)'
+                      : 'rgba(239,68,68,0.3)',
+                    borderWidth: !day.done ? 1.5 : 1,
+                    borderColor: !day.done
+                      ? '#C4912A'
+                      : day.correct
+                      ? 'rgba(34,197,94,0.6)'
+                      : 'rgba(239,68,68,0.5)',
+                  }}
+                >
+                  {day.done ? (
+                    <Ionicons
+                      name={day.correct ? 'checkmark' : 'close'}
+                      size={16}
+                      color={day.correct ? '#22c55e' : '#ef4444'}
+                    />
+                  ) : (
+                    <Text style={{ color: '#C4912A', fontSize: 10, fontWeight: '600' }}>
+                      Today
                     </Text>
-                  ))}
+                  )}
                 </View>
               ))}
             </View>
+            {/* Streak count */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
+              <Ionicons name="flame" size={20} color="#f97316" />
+              <Text style={{ color: '#f97316', fontSize: 20, fontWeight: '800' }}>6 day streak</Text>
+            </View>
+          </Animated.View>
+          <Animated.Text style={[styles.title, titleStyle1]}>
+            Build Your Streak
+          </Animated.Text>
+          <Animated.Text style={[styles.description, descStyle1]}>
+            Miss a day, lose your streak.{'\n'}How long can you go?
+          </Animated.Text>
+        </View>
+
+        {/* ─── Page 3: CTA — "Start Today's Challenge" ─── */}
+        <View style={[styles.page, { width: screenWidth }]}>
+          <Animated.View style={[{ marginBottom: 24 }, iconStyle2]}>
+            {/* Decade timeline emoji */}
+            <Text style={{ fontSize: 32, textAlign: 'center', lineHeight: 40 }}>
+              ⬛⬛🔴⬛🟡⬛⬛
+            </Text>
+            <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginTop: 8 }}>
+              Share your results like Wordle
+            </Text>
           </Animated.View>
 
           <Animated.Text style={[styles.title, titleStyle2]}>
-            Ready to Begin?
+            Your First Challenge{'\n'}Awaits
           </Animated.Text>
 
           <Animated.View style={[{ width: '100%' }, descStyle2]}>
-            <Pressable onPress={handleTryFree} disabled={isNavigating}>
+            <Pressable onPress={handleStartChallenge} disabled={isNavigating}>
               <LinearGradient
-                colors={['#EC4899', '#8B5CF6']}
+                colors={['#C4912A', '#8B6914']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryButton}
@@ -304,7 +403,7 @@ export default function OnboardingScreen() {
                 {isNavigating ? (
                   <ActivityIndicator color="white" />
                 ) : (
-                  <Text style={styles.primaryButtonText}>Try Free</Text>
+                  <Text style={styles.primaryButtonText}>Start Today's Challenge</Text>
                 )}
               </LinearGradient>
             </Pressable>
@@ -347,54 +446,27 @@ const styles = StyleSheet.create({
   },
   gradientOrb: {
     position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    opacity: 0.3,
-    top: '30%',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    opacity: 0.15,
+    top: '25%',
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: 'bold',
     color: 'white',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
+    lineHeight: 38,
+    fontFamily: 'PlayfairDisplay_700Bold',
   },
   description: {
-    fontSize: 18,
+    fontSize: 17,
     color: '#9CA3AF',
     textAlign: 'center',
     paddingHorizontal: 16,
-  },
-  featuresContainer: {
-    width: '100%',
-    marginTop: 24,
-  },
-  featurePill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  featureText: {
-    fontSize: 16,
-    color: 'white',
-    textAlign: 'center',
-  },
-  emojiGrid: {
-    marginBottom: 32,
-  },
-  emojiRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  emojiText: {
-    fontSize: 40,
-    marginHorizontal: 8,
-    marginVertical: 4,
+    lineHeight: 24,
   },
   primaryButton: {
     borderRadius: 16,
@@ -405,7 +477,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: 'white',
   },
   secondaryButton: {

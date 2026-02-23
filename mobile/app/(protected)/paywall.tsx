@@ -1,143 +1,79 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { useSubscription } from '../../contexts/SubscriptionContext';
-import { PurchasesPackage } from '../../lib/purchases';
-import { hapticSuccess, hapticError, hapticLight, hapticMedium } from '../../lib/haptics';
 
-export default function PaywallScreen() {
-  const { offerings, isLoading, handlePurchase, handleRestore } =
-    useSubscription();
-  const [purchasing, setPurchasing] = useState<string | null>(null);
+// RevenueCat UI — paywall is fully managed from RevenueCat dashboard
+let RevenueCatUI: any = null;
+let PAYWALL_RESULT: any = { PURCHASED: 'PURCHASED', RESTORED: 'RESTORED', NOT_PRESENTED: 'NOT_PRESENTED', ERROR: 'ERROR', CANCELLED: 'CANCELLED' };
+try {
+  const mod = require('react-native-purchases-ui');
+  RevenueCatUI = mod.default ?? mod;
+  if (mod.PAYWALL_RESULT) PAYWALL_RESULT = mod.PAYWALL_RESULT;
+} catch {
+  // react-native-purchases-ui not available (Expo Go / dev)
+}
 
-  const handlePackagePurchase = async (pkg: PurchasesPackage) => {
-    // Light haptic on package selection
-    hapticLight();
-    setPurchasing(pkg.identifier);
-    try {
-      const success = await handlePurchase(pkg);
-      if (success) {
-        hapticSuccess();
-        Alert.alert('Success', 'Subscription activated!');
-        router.back();
-      } else {
-        hapticError();
-        Alert.alert('Error', 'Purchase failed. Please try again.');
-      }
-    } finally {
-      setPurchasing(null);
-    }
-  };
+function SnackbarAndBack() {
+  const opacity = useRef(new Animated.Value(0)).current;
 
-  const handleRestorePurchases = async () => {
-    hapticMedium();
-    const success = await handleRestore();
-    if (success) {
-      hapticSuccess();
-      Alert.alert('Success', 'Purchases restored!');
-      router.back();
-    } else {
-      hapticError();
-      Alert.alert('Not Found', 'No previous purchases found.');
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-gray-950">
-        <ActivityIndicator size="large" color="#ec4899" />
-      </SafeAreaView>
-    );
-  }
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.delay(1200),
+      Animated.timing(opacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start(() => router.back());
+  }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-950">
-      <ScrollView className="flex-1">
-        {/* Header */}
-        <View className="items-center border-b border-gray-800 px-6 pb-6 pt-8">
-          <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-pink-500/20">
-            <Ionicons name="diamond-outline" size={32} color="#ec4899" />
-          </View>
-          <Text className="mb-2 text-3xl font-bold text-white">
-            Upgrade to Premium
-          </Text>
-          <Text className="text-center text-base text-gray-400">
-            Unlock all premium features
-          </Text>
-        </View>
-
-        {/* Features */}
-        <View className="px-6 py-6">
-          <Feature icon="infinite" text="Unlimited access" />
-          <Feature icon="sparkles" text="Premium features" />
-          <Feature icon="time" text="No ads" />
-          <Feature icon="headset" text="Priority support" />
-        </View>
-
-        {/* Packages */}
-        {offerings?.availablePackages.map((pkg: PurchasesPackage) => (
-          <TouchableOpacity
-            key={pkg.identifier}
-            className="mx-6 mb-4 flex-row items-center rounded-xl border border-gray-800 bg-gray-900 p-5"
-            onPress={() => handlePackagePurchase(pkg)}
-            disabled={purchasing === pkg.identifier}
-            style={purchasing === pkg.identifier ? { opacity: 0.7 } : undefined}
-          >
-            <View className="flex-1">
-              <Text className="mb-1 text-lg font-semibold text-white">
-                {pkg.product.title}
-              </Text>
-              <Text className="mb-2 text-sm text-gray-400">
-                {pkg.product.description}
-              </Text>
-              <Text className="text-2xl font-bold text-pink-500">
-                {pkg.product.priceString}
-              </Text>
-            </View>
-            {purchasing === pkg.identifier && (
-              <ActivityIndicator color="#ec4899" style={{ marginLeft: 16 }} />
-            )}
-          </TouchableOpacity>
-        ))}
-
-        {/* Restore */}
-        <TouchableOpacity
-          className="mx-6 mt-2 items-center rounded-xl border border-pink-500 p-4"
-          onPress={handleRestorePurchases}
-        >
-          <Text className="text-base font-semibold text-pink-500">
-            Restore Purchases
-          </Text>
-        </TouchableOpacity>
-
-        {/* Footer */}
-        <Text className="mx-6 mb-8 mt-4 text-center text-xs text-gray-500">
-          Subscription automatically renews unless canceled 24 hours before the
-          end of the current period.
+    <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+      <Animated.View
+        style={{
+          opacity,
+          position: 'absolute',
+          bottom: 48,
+          left: 24,
+          right: 24,
+          backgroundColor: '#1f1f1f',
+          borderRadius: 12,
+          paddingVertical: 14,
+          paddingHorizontal: 20,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+          elevation: 6,
+        }}
+      >
+        <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>
+          Paywall not available for now
         </Text>
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.View>
+    </View>
   );
 }
 
-function Feature({ icon, text }: { icon: string; text: string }) {
+export default function PaywallScreen() {
+  const { checkSubscription } = useSubscription();
+
+  const handleDismiss = () => router.back();
+
+  const handlePurchaseCompleted = async () => {
+    await checkSubscription();
+    router.back();
+  };
+
+  if (!RevenueCatUI) {
+    return <SnackbarAndBack />;
+  }
+
   return (
-    <View className="mb-4 flex-row items-center">
-      <Ionicons
-        name={icon as keyof typeof Ionicons.glyphMap}
-        size={22}
-        color="#10b981"
-      />
-      <Text className="ml-3 text-base text-gray-300">{text}</Text>
-    </View>
+    <RevenueCatUI.Paywall
+      onDismiss={handleDismiss}
+      onPurchaseCompleted={handlePurchaseCompleted}
+      onRestoreCompleted={handlePurchaseCompleted}
+      onPurchaseError={() => router.back()}
+      onRestoreError={() => router.back()}
+    />
   );
 }

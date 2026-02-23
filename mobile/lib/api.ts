@@ -52,6 +52,14 @@ export const authApi = axios.create({
   },
 });
 
+// Auth failure callback - allows AuthContext to be notified when token refresh fails
+let onAuthFailed: (() => void) | null = null;
+
+/** Register a callback to be invoked when authentication fails (token refresh error) */
+export function setOnAuthFailed(callback: (() => void) | null): void {
+  onAuthFailed = callback;
+}
+
 // Request interceptor: attach access token
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
@@ -127,6 +135,9 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         await clearTokens();
+        if (onAuthFailed) {
+          onAuthFailed();
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

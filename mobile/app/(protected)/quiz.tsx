@@ -445,7 +445,7 @@ export default function QuizScreen() {
           <Text className="text-sm text-pink-400 font-semibold mb-2 text-center">
             Question {currentIndex + 1}
           </Text>
-          <Text className="text-2xl font-bold text-white text-center leading-tight mb-8">
+          <Text className="text-2xl font-bold text-white text-center leading-tight mb-8" style={{ fontFamily: 'PlayfairDisplay_700Bold' }}>
             {currentQuestion.question}
           </Text>
 

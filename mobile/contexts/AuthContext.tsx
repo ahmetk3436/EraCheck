@@ -6,7 +6,7 @@ import React, {
   useCallback,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../lib/api';
+import api, { authApi } from '../lib/api';
 import {
   setTokens,
   clearTokens,
@@ -14,6 +14,19 @@ import {
   getRefreshToken,
 } from '../lib/storage';
 import { hapticSuccess, hapticError } from '../lib/haptics';
+// Sentry removed - using no-op stub
+const Sentry = {
+  init: () => {},
+  captureException: (e: any) => console.error(e),
+  captureMessage: (m: string) => console.warn(m),
+  setUser: (_u: any) => {},
+  addBreadcrumb: (_b: any) => {},
+  withScope: (cb: any) => cb({ setExtra: () => {}, setTag: () => {} }),
+  Native: { wrap: (c: any) => c },
+  wrap: (c: any) => c,
+  ReactNavigationInstrumentation: class {},
+  ReactNativeTracing: class {},
+};
 import type { User, AuthResponse } from '../types/auth';
 
 const GUEST_MODE_KEY = 'eracheck_guest_mode';
@@ -61,17 +74,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const token = await getAccessToken();
         if (token) {
-          const { data } = await api.get('/health');
-          if (data.status === 'ok') {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            setUser({
-              id: payload.sub,
-              email: payload.email,
-              isAppleUser: payload.is_apple_user || false,
-            });
-            // If user is authenticated, clear guest mode
-            setIsGuest(false);
-          }
+          const { data } = await authApi.get('/auth/me');
+          setUser({
+            id: data.id,
+            email: data.email,
+            isAppleUser: data.is_apple_user || data.isAppleUser || false,
+          });
+          // If user is authenticated, clear guest mode
+          setIsGuest(false);
         }
       } catch {
         await clearTokens();
@@ -84,12 +94,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const { data } = await api.post<AuthResponse>('/auth/login', {
+      const { data } = await authApi.post<AuthResponse>('/auth/login', {
         email,
         password,
       });
       await setTokens(data.access_token, data.refresh_token);
       setUser({ ...data.user, isAppleUser: false });
+      Sentry.setUser({ id: data.user.id, email: data.user.email });
       // Clear guest mode on login
       setIsGuest(false);
       await AsyncStorage.removeItem(GUEST_MODE_KEY);
@@ -104,12 +115,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(async (email: string, password: string) => {
     try {
-      const { data } = await api.post<AuthResponse>('/auth/register', {
+      const { data } = await authApi.post<AuthResponse>('/auth/register', {
         email,
         password,
       });
       await setTokens(data.access_token, data.refresh_token);
       setUser({ ...data.user, isAppleUser: false });
+      Sentry.setUser({ id: data.user.id, email: data.user.email });
       // Clear guest mode on register
       setIsGuest(false);
       await AsyncStorage.removeItem(GUEST_MODE_KEY);
@@ -126,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithApple = useCallback(
     async (identityToken: string, authCode: string, fullName?: string, email?: string) => {
       try {
-        const { data } = await api.post<AuthResponse>('/auth/apple', {
+        const { data } = await authApi.post<AuthResponse>('/auth/apple', {
           identity_token: identityToken,
           authorization_code: authCode,
           full_name: fullName,
@@ -134,6 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         await setTokens(data.access_token, data.refresh_token);
         setUser({ ...data.user, isAppleUser: true });
+        Sentry.setUser({ id: data.user.id, email: data.user.email });
         setIsGuest(false);
         await AsyncStorage.removeItem(GUEST_MODE_KEY);
         await AsyncStorage.removeItem(GUEST_USAGE_KEY);
@@ -151,13 +164,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const refreshToken = await getRefreshToken();
       if (refreshToken) {
-        await api.post('/auth/logout', { refresh_token: refreshToken });
+        await authApi.post('/auth/logout', { refresh_token: refreshToken });
       }
     } catch {
       // Ignore logout API errors
     } finally {
       await clearTokens();
       setUser(null);
+      Sentry.setUser(null);
       setIsGuest(false);
       await AsyncStorage.removeItem(GUEST_MODE_KEY);
       await AsyncStorage.removeItem(GUEST_USAGE_KEY);
@@ -169,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const deleteAccount = useCallback(
     async (password?: string) => {
       try {
-        await api.delete('/auth/account', {
+        await authApi.delete('/auth/account', {
           data: { password: password || '' },
         });
         await clearTokens();

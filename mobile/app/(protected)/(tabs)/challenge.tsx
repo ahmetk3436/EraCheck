@@ -12,10 +12,13 @@ import {
   RefreshControl,
   Share,
   Dimensions,
+  Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import ReanimatedAnimated, {
   FadeIn,
   FadeOut,
@@ -34,6 +37,7 @@ import api from '../../../lib/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import Skeleton from '../../../components/Skeleton';
 import ErrorState from '../../../components/ErrorState';
+import { scheduleStreakReminder, onChallengeCompleted } from '../../../lib/notifications';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -57,6 +61,7 @@ interface ChallengeData {
   is_correct: boolean;
   correct_decade?: string;
   fun_fact?: string;
+  community_accuracy?: number;
 }
 
 interface ChallengeHistoryItem {
@@ -71,6 +76,7 @@ interface ChallengeHistoryItem {
 interface Streak {
   current_streak: number;
   longest_streak: number;
+  streak_freezes?: number;
 }
 
 interface Badge {
@@ -80,11 +86,24 @@ interface Badge {
   unlocked: boolean;
 }
 
+interface PhotoAnalysisResult {
+  id: string;
+  photo_url: string;
+  predicted_decade: string;
+  confidence_score: number;
+  analysis: string;
+  characteristics: string[];
+  created_at: string;
+}
+
 // ============================================
 // CONSTANTS
 // ============================================
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const GUEST_FREE_USES = 3;
+const GUEST_USES_KEY = 'guest_challenge_uses';
 
 // Era-appropriate decade color mappings for option buttons
 const DECADE_COLORS: Record<string, { bg: readonly [string, string]; border: string; text: string }> = {
@@ -136,7 +155,6 @@ const generateShareText = (
     ? new Date(challenge.challenge_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-  // Build emoji timeline grid (like Wordle)
   const timeline = ORDERED_DECADES.map((_, i) => {
     if (i === correctIdx && i === userIdx) return '✅';
     if (i === correctIdx) return '🟡';
@@ -150,6 +168,14 @@ const generateShareText = (
     : distance === 1 ? 'One decade off! 😅' : `${distance > 0 ? distance + ' decades off' : 'Missed it'} 📅`;
 
   return `EraCheck Daily (${dateStr})\n${timeline}\n${resultLine}\n🔥 ${streak} day streak\n\nCan you guess the decade?\n#EraCheck`;
+};
+
+const generatePhotoAnalysisShareText = (result: PhotoAnalysisResult): string => {
+  return `EraCheck analyzed my photo! 📸\n\n` +
+    `Predicted decade: ${result.predicted_decade}\n` +
+    `Confidence: ${Math.round(result.confidence_score)}%\n\n` +
+    `${result.analysis}\n\n` +
+    `#EraCheck #PhotoChallenge`;
 };
 
 // Sepia/gold confetti colors — on-brand for vintage photo aesthetic
@@ -245,7 +271,7 @@ const DecadeOptionButton: React.FC<DecadeOptionButtonProps> = React.memo(
               <ActivityIndicator size="small" color="#a855f7" />
             ) : (
               <>
-                <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800', letterSpacing: 0.5 }}>
+                <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800', letterSpacing: 0.5, fontFamily: 'PlayfairDisplay_800ExtraBold' }}>
                   {option}
                 </Text>
                 <Text style={{ color: colors.text, fontSize: 11, opacity: 0.6, marginTop: 2 }}>
@@ -318,6 +344,19 @@ export default function ChallengeScreen() {
   const [photoZoomVisible, setPhotoZoomVisible] = useState(false);
   const [challengeSharing, setChallengeSharing] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showFTUE, setShowFTUE] = useState(false);
+
+  // Photo upload states
+  const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<PhotoAnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [photoZoomModalVisible, setPhotoZoomModalVisible] = useState(false);
+  const [analysisSharing, setAnalysisSharing] = useState(false);
+
+  // Guest usage tracking
+  const [guestUsesRemaining, setGuestUsesRemaining] = useState(GUEST_FREE_USES);
+  const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
 
   const shakeTranslateX = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({
@@ -330,13 +369,158 @@ export default function ChallengeScreen() {
   const photoOverlayOpacity = useRef(new Animated.Value(1)).current;
 
   // ============================================
+  // GUEST USAGE MANAGEMENT
+  // ============================================
+
+  const loadGuestUsage = useCallback(async () => {
+    if (!isGuest) return;
+    try {
+      const stored = await AsyncStorage.getItem(GUEST_USES_KEY);
+      if (stored) {
+        const used = parseInt(stored, 10);
+        setGuestUsesRemaining(Math.max(0, GUEST_FREE_USES - used));
+      }
+    } catch (e) {
+      console.error('Failed to load guest usage:', e);
+    }
+  }, [isGuest]);
+
+  const incrementGuestUsage = useCallback(async (): Promise<boolean> => {
+    if (!isGuest) return true;
+    
+    try {
+      const stored = await AsyncStorage.getItem(GUEST_USES_KEY);
+      const used = stored ? parseInt(stored, 10) : 0;
+      
+      if (used >= GUEST_FREE_USES) {
+        setShowGuestLimitModal(true);
+        return false;
+      }
+      
+      await AsyncStorage.setItem(GUEST_USES_KEY, String(used + 1));
+      setGuestUsesRemaining(Math.max(0, GUEST_FREE_USES - used - 1));
+      return true;
+    } catch (e) {
+      console.error('Failed to increment guest usage:', e);
+      return true;
+    }
+  }, [isGuest]);
+
+  // ============================================
+  // PHOTO UPLOAD & ANALYSIS
+  // ============================================
+
+  const pickImage = async (useCamera: boolean = false) => {
+    setAnalysisError(null);
+    setAnalysisResult(null);
+
+    const permissionResult = useCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permissionResult.granted) {
+      Alert.alert(
+        'Permission Required',
+        `Please grant ${useCamera ? 'camera' : 'photo library'} access to upload photos.`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    const result = useCamera
+      ? await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.8,
+        })
+      : await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.8,
+        });
+
+    if (!result.canceled && result.assets[0]) {
+      hapticSelection();
+      setUploadedPhoto(result.assets[0].uri);
+      analyzePhoto(result.assets[0].uri);
+    }
+  };
+
+  const analyzePhoto = async (photoUri: string) => {
+    // Check guest usage for photo analysis
+    const canProceed = await incrementGuestUsage();
+    if (!canProceed) return;
+
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+
+    try {
+      const formData = new FormData();
+      const filename = photoUri.split('/').pop() || 'photo.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+      formData.append('photo', {
+        uri: Platform.OS === 'ios' ? photoUri.replace('file://', '') : photoUri,
+        name: filename,
+        type,
+      } as any);
+
+      const response = await api.post('/photos/analyze', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 60000,
+      });
+
+      const result: PhotoAnalysisResult = response.data.analysis || response.data;
+      setAnalysisResult(result);
+      hapticSuccess();
+
+      // Show confetti for high confidence results
+      if (result.confidence_score >= 70) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 2000);
+      }
+    } catch (err: any) {
+      console.error('Failed to analyze photo:', err);
+      hapticError();
+      setAnalysisError(err.response?.data?.error || 'Failed to analyze photo. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleAnalysisShare = async () => {
+    if (!analysisResult) return;
+    setAnalysisSharing(true);
+    hapticSelection();
+    try {
+      const text = generatePhotoAnalysisShareText(analysisResult);
+      await Share.share({ message: text });
+      hapticSuccess();
+    } catch { } finally {
+      setAnalysisSharing(false);
+    }
+  };
+
+  const resetPhotoAnalysis = () => {
+    hapticSelection();
+    setUploadedPhoto(null);
+    setAnalysisResult(null);
+    setAnalysisError(null);
+  };
+
+  // ============================================
   // DATA FETCHING
   // ============================================
 
   const fetchChallengeData = useCallback(async (): Promise<void> => {
-    if (isGuest && !isAuthenticated) {
-      setIsLoading(false);
-      return;
+    // Load guest usage for guest users
+    if (isGuest) {
+      await loadGuestUsage();
     }
 
     try {
@@ -368,7 +552,12 @@ export default function ChallengeScreen() {
       const answered = !!challengeData.user_answer;
       setChallengeCompleted(answered);
       // Show result card immediately (no entrance animation) for already-answered challenges
-      if (answered) resultAnim.setValue(1);
+      if (answered) {
+        resultAnim.setValue(1);
+        // Mark today's challenge as done (for tab badge)
+        const today = new Date().toISOString().split('T')[0];
+        await AsyncStorage.setItem('challenge_completed_date', today);
+      }
 
       try {
         const historyRes = await api.get('/challenges/history?limit=5');
@@ -379,6 +568,9 @@ export default function ChallengeScreen() {
 
       const stored = await AsyncStorage.getItem('celebratedMilestones');
       if (stored) setCelebratedMilestones(JSON.parse(stored));
+
+      // Schedule streak reminder if challenge not yet done today
+      scheduleStreakReminder();
     } catch (err) {
       console.error('Failed to fetch challenge:', err);
       hapticError();
@@ -386,7 +578,7 @@ export default function ChallengeScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [loadGuestUsage, isGuest]);
 
   const updateCountdown = useCallback((): void => {
     const now = new Date();
@@ -416,6 +608,11 @@ export default function ChallengeScreen() {
 
   const handleAnswer = async (answer: string): Promise<void> => {
     if (isSubmitting) return;
+
+    // Check guest usage
+    const canProceed = await incrementGuestUsage();
+    if (!canProceed) return;
+
     hapticSelection();
     setIsSubmitting(true);
 
@@ -425,6 +622,10 @@ export default function ChallengeScreen() {
 
       setChallenge(updated);
       setChallengeCompleted(true);
+      // Mark today done (tab badge) + schedule next-day notification
+      const today = new Date().toISOString().split('T')[0];
+      await AsyncStorage.setItem('challenge_completed_date', today);
+      onChallengeCompleted();
 
       if (updated.is_correct) {
         hapticSuccess();
@@ -472,6 +673,12 @@ export default function ChallengeScreen() {
         const historyRes = await api.get('/challenges/history?limit=5');
         setHistory(historyRes.data.challenges || []);
       } catch { }
+
+      // FTUE: show streak explanation after first-ever challenge
+      const ftueShown = await AsyncStorage.getItem('ftue_streak_explained');
+      if (!ftueShown) {
+        setTimeout(() => setShowFTUE(true), 1500);
+      }
     } catch (err) {
       console.error('Failed to submit answer:', err);
       hapticError();
@@ -599,7 +806,7 @@ export default function ChallengeScreen() {
   }, [refreshError, retryCount]);
 
   // ============================================
-  // LOADING / ERROR / GUEST STATES
+  // LOADING / ERROR STATES
   // ============================================
 
   if (isLoading) {
@@ -614,21 +821,6 @@ export default function ChallengeScreen() {
     return (
       <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
         <ErrorState icon="help-circle-outline" title="Challenge Unavailable" message="We couldn't load today's challenge" retryText="Try Again" onRetry={handleRetry} />
-      </SafeAreaView>
-    );
-  }
-
-  if (isGuest && !isAuthenticated) {
-    return (
-      <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
-        <View className="flex-1 items-center justify-center px-8">
-          <Ionicons name="lock-closed-outline" size={64} color="#6366f1" />
-          <Text className="text-xl font-bold text-white mt-6">Sign In Required</Text>
-          <Text className="text-gray-500 text-center mt-2">Create an account to access daily challenges and earn badges</Text>
-          <Pressable onPress={() => router.push('/(auth)/register')} className="rounded-2xl px-8 py-4 mt-8" style={{ backgroundColor: '#ec4899' }}>
-            <Text className="text-white font-bold text-lg">Sign Up Free</Text>
-          </Pressable>
-        </View>
       </SafeAreaView>
     );
   }
@@ -672,9 +864,205 @@ export default function ChallengeScreen() {
           </Pressable>
         )}
 
-        {/* Header */}
+        {/* Guest Usage Banner */}
+        {isGuest && (
+          <View className="bg-purple-900/40 border border-purple-700/50 rounded-xl mt-2 mb-3 p-3 flex-row items-center gap-2">
+            <Ionicons name="person-outline" size={18} color="#c084fc" />
+            <Text className="text-purple-300 text-sm flex-1">
+              Guest mode: {guestUsesRemaining} free {guestUsesRemaining === 1 ? 'use' : 'uses'} remaining
+            </Text>
+            <Pressable 
+              onPress={() => router.push('/(auth)/register')}
+              className="bg-purple-600 rounded-lg px-3 py-1.5"
+            >
+              <Text className="text-white text-xs font-semibold">Sign Up</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* ─── PHOTO UPLOAD SECTION ─── */}
+        <View className="mb-6">
+          <Text className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'PlayfairDisplay_700Bold' }}>
+            Photo Decade Challenge
+          </Text>
+          <Text className="text-gray-400 text-sm mb-4">
+            Upload a photo and let AI guess which decade it looks like
+          </Text>
+
+          {!uploadedPhoto ? (
+            <View className="gap-3">
+              <Pressable
+                onPress={() => pickImage(false)}
+                className="rounded-3xl overflow-hidden border-2 border-dashed border-purple-500/50 bg-gray-900/50"
+                style={{ borderWidth: 2 }}
+              >
+                <LinearGradient
+                  colors={['rgba(88,28,135,0.2)', 'rgba(131,24,67,0.2)']}
+                  className="py-10 items-center"
+                >
+                  <View className="w-16 h-16 rounded-full bg-purple-500/20 items-center justify-center mb-3">
+                    <Ionicons name="images" size={32} color="#c084fc" />
+                  </View>
+                  <Text className="text-white font-semibold text-lg mb-1">Choose from Gallery</Text>
+                  <Text className="text-gray-400 text-sm">Select a photo to analyze</Text>
+                </LinearGradient>
+              </Pressable>
+
+              <Pressable
+                onPress={() => pickImage(true)}
+                className="rounded-2xl overflow-hidden border border-pink-500/30 bg-gray-900/50"
+              >
+                <View className="py-4 flex-row items-center justify-center gap-3">
+                  <Ionicons name="camera" size={24} color="#f472b6" />
+                  <Text className="text-pink-400 font-semibold">Take a Photo</Text>
+                </View>
+              </Pressable>
+            </View>
+          ) : (
+            <View className="rounded-3xl overflow-hidden border border-purple-500/30 bg-gray-900">
+              {/* Uploaded Photo */}
+              <Pressable onPress={() => setPhotoZoomModalVisible(true)}>
+                <Image
+                  source={{ uri: uploadedPhoto }}
+                  style={{ width: '100%', height: 280 }}
+                  resizeMode="cover"
+                />
+                <View className="absolute top-3 right-3 rounded-full px-2 py-1 bg-black/60 flex-row items-center gap-1">
+                  <Ionicons name="expand-outline" size={12} color="#d1d5db" />
+                  <Text className="text-gray-300 text-xs">Zoom</Text>
+                </View>
+              </Pressable>
+
+              {/* Analysis Loading */}
+              {isAnalyzing && (
+                <View className="p-6 items-center">
+                  <ActivityIndicator size="large" color="#a855f7" />
+                  <Text className="text-gray-400 text-sm mt-3">Analyzing your photo...</Text>
+                  <Text className="text-gray-500 text-xs mt-1">AI is examining visual clues</Text>
+                </View>
+              )}
+
+              {/* Analysis Error */}
+              {analysisError && (
+                <View className="p-4">
+                  <View className="bg-red-900/30 border border-red-700 rounded-xl p-4 flex-row items-center gap-3">
+                    <Ionicons name="alert-circle" size={24} color="#f87171" />
+                    <Text className="text-red-400 text-sm flex-1">{analysisError}</Text>
+                  </View>
+                  <View className="flex-row gap-3 mt-4">
+                    <Pressable
+                      onPress={() => analyzePhoto(uploadedPhoto)}
+                      className="flex-1 bg-purple-600 rounded-xl py-3 items-center"
+                    >
+                      <Text className="text-white font-semibold">Try Again</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={resetPhotoAnalysis}
+                      className="flex-1 bg-gray-800 rounded-xl py-3 items-center"
+                    >
+                      <Text className="text-gray-300 font-semibold">New Photo</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
+              {/* Analysis Result */}
+              {analysisResult && !isAnalyzing && (
+                <LinearGradient
+                  colors={['rgba(6,78,59,0.9)', 'rgba(88,28,135,0.9)']}
+                  className="p-5"
+                >
+                  {/* Decade Prediction */}
+                  <View className="items-center mb-4">
+                    <Text className="text-gray-300 text-sm uppercase tracking-wider mb-1">AI Prediction</Text>
+                    <View className="flex-row items-center gap-2">
+                      <Text className="text-4xl font-black text-white" style={{ fontFamily: 'PlayfairDisplay_800ExtraBold' }}>
+                        {analysisResult.predicted_decade}
+                      </Text>
+                    </View>
+                    <View className="flex-row items-center gap-1 mt-2">
+                      <Ionicons name="analytics" size={14} color="#a78bfa" />
+                      <Text className="text-purple-300 text-sm font-semibold">
+                        {Math.round(analysisResult.confidence_score)}% confidence
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Confidence Bar */}
+                  <View className="bg-gray-800/50 rounded-full h-2 mb-4 overflow-hidden">
+                    <View
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${analysisResult.confidence_score}%`,
+                        backgroundColor: analysisResult.confidence_score >= 70 ? '#10b981' :
+                          analysisResult.confidence_score >= 40 ? '#f59e0b' : '#ef4444'
+                      }}
+                    />
+                  </View>
+
+                  {/* Analysis Text */}
+                  {analysisResult.analysis && (
+                    <View className="bg-black/20 rounded-xl p-4 mb-4">
+                      <View className="flex-row items-center gap-2 mb-2">
+                        <Ionicons name="bulb" size={16} color="#fbbf24" />
+                        <Text className="text-yellow-300 text-xs font-semibold uppercase tracking-wider">Analysis</Text>
+                      </View>
+                      <Text className="text-gray-200 text-sm leading-6">
+                        {analysisResult.analysis}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Characteristics */}
+                  {analysisResult.characteristics && analysisResult.characteristics.length > 0 && (
+                    <View className="mb-4">
+                      <Text className="text-gray-400 text-xs uppercase tracking-wider mb-2">Visual Characteristics Detected</Text>
+                      <View className="flex-row flex-wrap gap-2">
+                        {analysisResult.characteristics.map((char, i) => (
+                          <View key={i} className="bg-purple-500/20 border border-purple-500/30 rounded-full px-3 py-1">
+                            <Text className="text-purple-300 text-xs">{char}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Action Buttons */}
+                  <View className="flex-row gap-3">
+                    <Pressable
+                      onPress={handleAnalysisShare}
+                      disabled={analysisSharing}
+                      className="flex-1 flex-row items-center justify-center gap-2 bg-white/10 rounded-xl py-3"
+                    >
+                      {analysisSharing ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <Ionicons name="share-social" size={18} color="#fff" />
+                          <Text className="text-white font-semibold text-sm">Share</Text>
+                        </>
+                      )}
+                    </Pressable>
+                    <Pressable
+                      onPress={resetPhotoAnalysis}
+                      className="flex-1 flex-row items-center justify-center gap-2 bg-pink-600 rounded-xl py-3"
+                    >
+                      <Ionicons name="refresh" size={18} color="#fff" />
+                      <Text className="text-white font-semibold text-sm">New Photo</Text>
+                    </Pressable>
+                  </View>
+                </LinearGradient>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Divider */}
+        <View className="h-px bg-gray-800 mb-6" />
+
+        {/* ─── DAILY CHALLENGE SECTION ─── */}
         <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-2xl font-bold text-white">Daily Challenge</Text>
+          <Text className="text-2xl font-bold text-white" style={{ fontFamily: 'PlayfairDisplay_700Bold' }}>Daily Challenge</Text>
           <View className="flex-row items-center gap-2">
             {history.length > 0 && (
               <View className="bg-green-500/20 px-2 py-1 rounded-full">
@@ -687,6 +1075,12 @@ export default function ChallengeScreen() {
               <Ionicons name="flame" size={16} color="#ec4899" />
               <Text className="text-pink-400 font-semibold">{streak}</Text>
             </View>
+            {(streakData?.streak_freezes ?? 0) > 0 && (
+              <View className="bg-blue-500/20 px-2 py-1 rounded-full flex-row items-center gap-1">
+                <Ionicons name="snow" size={14} color="#60a5fa" />
+                <Text className="text-blue-400 text-xs font-semibold">{streakData?.streak_freezes}</Text>
+              </View>
+            )}
           </View>
         </View>
         <Text className="text-gray-400 text-sm mb-5">
@@ -794,7 +1188,7 @@ export default function ChallengeScreen() {
             end={{ x: 1, y: 1 }}
             className="px-4 py-3"
           >
-            <Text className="text-white text-base font-bold text-center">
+            <Text className="text-white text-base font-bold text-center" style={{ fontFamily: 'PlayfairDisplay_700Bold' }}>
               📅 Which decade is this photo from?
             </Text>
             {!challengeCompleted && (
@@ -847,10 +1241,10 @@ export default function ChallengeScreen() {
                   />
                 </View>
                 <View className="flex-1">
-                  <Text className={`text-xl font-black ${challenge.is_correct ? 'text-green-300' : 'text-red-300'}`}>
+                  <Text className={`text-xl font-black ${challenge.is_correct ? 'text-green-300' : 'text-red-300'}`} style={{ fontFamily: 'PlayfairDisplay_800ExtraBold' }}>
                     {challenge.is_correct ? 'Nailed it! 🎯' : 'Close but no cigar'}
                   </Text>
-                  <Text className="text-white text-base font-bold mt-0.5">
+                  <Text className="text-white text-base font-bold mt-0.5" style={{ fontFamily: 'PlayfairDisplay_700Bold' }}>
                     Photo was from: {challenge.correct_decade}
                   </Text>
                 </View>
@@ -894,6 +1288,19 @@ export default function ChallengeScreen() {
                   </Text>
                   <Text className="text-gray-500 text-xs">
                     (You: {challenge.user_answer})
+                  </Text>
+                </View>
+              )}
+
+              {/* Community accuracy */}
+              {challenge.community_accuracy != null && challenge.community_accuracy > 0 && (
+                <View
+                  className="rounded-xl px-4 py-2 mb-3 flex-row items-center justify-center gap-2"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+                >
+                  <Ionicons name="people" size={14} color="#a78bfa" />
+                  <Text className="text-purple-300 text-sm font-medium">
+                    {Math.round(challenge.community_accuracy)}% of players got this right
                   </Text>
                 </View>
               )}
@@ -1016,6 +1423,66 @@ export default function ChallengeScreen() {
         </Pressable>
       </Modal>
 
+      {/* ─── UPLOADED PHOTO ZOOM MODAL ─── */}
+      <Modal visible={photoZoomModalVisible} transparent animationType="fade" statusBarTranslucent>
+        <Pressable
+          className="flex-1 items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.95)' }}
+          onPress={() => setPhotoZoomModalVisible(false)}
+        >
+          <Pressable onPress={() => {}} style={{ width: SCREEN_WIDTH - 24 }}>
+            {uploadedPhoto && (
+              <Image
+                source={{ uri: uploadedPhoto }}
+                style={{ width: SCREEN_WIDTH - 24, height: SCREEN_WIDTH - 24, borderRadius: 16 }}
+                resizeMode="contain"
+              />
+            )}
+          </Pressable>
+          <Text className="text-gray-500 text-sm mt-4">Tap anywhere to close</Text>
+        </Pressable>
+      </Modal>
+
+      {/* ─── GUEST LIMIT MODAL ─── */}
+      <Modal visible={showGuestLimitModal} transparent animationType="fade" statusBarTranslucent>
+        <View className="flex-1 items-center justify-center p-6" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <View className="bg-gray-900 rounded-3xl p-8 w-full max-w-sm border border-gray-800">
+            <View className="items-center mb-4">
+              <View
+                className="w-16 h-16 rounded-full items-center justify-center mb-3"
+                style={{ backgroundColor: 'rgba(168,85,247,0.15)', borderWidth: 2, borderColor: 'rgba(168,85,247,0.4)' }}
+              >
+                <Ionicons name="lock-closed" size={32} color="#a855f7" />
+              </View>
+              <Text className="text-xl font-bold text-white text-center">Free Uses Expired</Text>
+            </View>
+            <Text className="text-gray-400 text-center text-sm leading-5 mb-6">
+              You've used all {GUEST_FREE_USES} free challenges. Sign up now for unlimited access to photo analysis and daily challenges!
+            </Text>
+            <Pressable
+              onPress={() => {
+                hapticSelection();
+                setShowGuestLimitModal(false);
+                router.push('/(auth)/register');
+              }}
+              className="rounded-2xl py-3.5 items-center mb-3"
+              style={{ backgroundColor: '#a855f7' }}
+            >
+              <Text className="text-white font-bold text-base">Sign Up Free</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                hapticSelection();
+                setShowGuestLimitModal(false);
+              }}
+              className="rounded-2xl py-3 items-center bg-gray-800"
+            >
+              <Text className="text-gray-400 font-semibold text-sm">Maybe Later</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       {/* ─── MILESTONE MODAL ─── */}
       <Modal visible={showMilestone} transparent animationType="fade" statusBarTranslucent>
         <View className="flex-1 bg-black/70 items-center justify-center p-6">
@@ -1051,6 +1518,51 @@ export default function ChallengeScreen() {
           ))}
         </View>
       )}
+
+      {/* ─── FTUE: First-time streak explanation ─── */}
+      <Modal visible={showFTUE} transparent animationType="fade" statusBarTranslucent>
+        <View className="flex-1 items-center justify-center p-6" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
+          <View className="bg-gray-900 rounded-3xl p-8 w-full max-w-sm border border-gray-800">
+            <View className="items-center mb-4">
+              <View
+                className="w-16 h-16 rounded-full items-center justify-center mb-3"
+                style={{ backgroundColor: 'rgba(249,115,22,0.15)', borderWidth: 2, borderColor: 'rgba(249,115,22,0.4)' }}
+              >
+                <Ionicons name="flame" size={36} color="#f97316" />
+              </View>
+              <Text className="text-xl font-bold text-white text-center">Your Streak Has Begun!</Text>
+            </View>
+            <Text className="text-gray-400 text-center text-sm leading-5 mb-2">
+              Come back <Text className="text-white font-semibold">every day</Text> to answer a new photo challenge and keep your streak alive.
+            </Text>
+            <Text className="text-gray-500 text-center text-xs mb-6">
+              Miss a day and your streak resets to zero.
+            </Text>
+            {/* 7-day visual */}
+            <View className="flex-row justify-center gap-2 mb-6">
+              <View className="w-8 h-8 rounded-lg items-center justify-center" style={{ backgroundColor: 'rgba(34,197,94,0.3)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.6)' }}>
+                <Ionicons name="checkmark" size={14} color="#22c55e" />
+              </View>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <View key={i} className="w-8 h-8 rounded-lg items-center justify-center" style={{ backgroundColor: 'rgba(55,65,81,0.5)' }}>
+                  <Text style={{ color: '#4b5563', fontSize: 10 }}>?</Text>
+                </View>
+              ))}
+            </View>
+            <Pressable
+              onPress={async () => {
+                hapticSelection();
+                setShowFTUE(false);
+                await AsyncStorage.setItem('ftue_streak_explained', 'true');
+              }}
+              className="rounded-2xl py-3.5 items-center"
+              style={{ backgroundColor: '#f97316' }}
+            >
+              <Text className="text-white font-bold text-base">Got it!</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

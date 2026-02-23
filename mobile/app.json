@@ -15,17 +15,43 @@
       "backgroundColor": "#2563eb"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.ahmetcoskunkizilkaya.eracheck",
-      "buildNumber": "1",
+      "buildNumber": "5",
       "config": {
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "NSPrivacyPolicyURL": "http://89.47.113.196:8086/api/legal/privacy"
+        "NSPrivacyPolicyURL": "http://89.47.113.196:8086/api/legal/privacy",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "C617.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1"
+            ]
+          }
+        ]
       }
     },
     "android": {
+      "package": "com.ahmetcoskun.eracheck",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -41,11 +67,15 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-apple-authentication",
+      "expo-font",
+      "expo-notifications"
     ],
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "FILL_IN"
+        "projectId": "790dc07d-b37e-4763-82c6-7fabb7f8de2d"
       }
     }
   }

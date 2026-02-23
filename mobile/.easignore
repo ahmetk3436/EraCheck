@@ -1,0 +1,51 @@
+# ===========================================
+# .easignore - EAS Build upload optimization
+# Whitelist approach: ignore everything, allow only what's needed
+# ===========================================
+
+# Ignore everything by default
+*
+
+# ---- Allow directories (must un-ignore dir first, then contents) ----
+!app/
+!app/**
+!components/
+!components/**
+!contexts/
+!contexts/**
+!hooks/
+!hooks/**
+!lib/
+!lib/**
+!locales/
+!locales/**
+!types/
+!types/**
+!utils/
+!utils/**
+!assets/
+!assets/**
+!scripts/
+!scripts/**
+
+# ---- Config files ----
+!app.json
+!app.config.*
+!eas.json
+!babel.config.*
+!metro.config.*
+!tsconfig.json
+!tailwind.config.*
+!global.css
+!nativewind-env.d.ts
+!package.json
+!package-lock.json
+!.npmrc
+!.env
+
+# ---- Explicitly block heavy dirs (safety net) ----
+node_modules/
+ios/
+android/
+.expo/
+.git/

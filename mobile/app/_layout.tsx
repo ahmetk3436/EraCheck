@@ -1,6 +1,8 @@
 import '../global.css';
 import '../lib/i18n';  // Import i18n side-effects
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
+import { useFonts, PlayfairDisplay_700Bold, PlayfairDisplay_800ExtraBold } from '@expo-google-fonts/playfair-display';
+import * as SplashScreen from 'expo-splash-screen';
 // Sentry removed - using no-op stub
 const Sentry = {
   init: () => {},
@@ -38,11 +40,30 @@ if (!__DEV__) {
   });
 }
 
+SplashScreen.preventAutoHideAsync();
+
 function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    PlayfairDisplay_700Bold,
+    PlayfairDisplay_800ExtraBold,
+  });
+
+  const onLayoutReady = useCallback(async () => {
+    if (fontsLoaded) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
   useEffect(() => {
     refreshApiBaseUrl(); // Update API URL from remote config (non-blocking)
     initLanguage();
   }, []);
+
+  useEffect(() => {
+    onLayoutReady();
+  }, [onLayoutReady]);
+
+  if (!fontsLoaded) return null;
 
   return (
     <ErrorBoundary>

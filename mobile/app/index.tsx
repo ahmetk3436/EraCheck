@@ -4,6 +4,7 @@ import { Redirect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 
+
 export default function Index() {
   const { isAuthenticated, isLoading, isGuest } = useAuth();
   const [onboardingChecked, setOnboardingChecked] = useState(false);
@@ -22,6 +23,11 @@ export default function Index() {
     };
     checkOnboarding();
   }, []);
+
+  // DEV bypass: skip onboarding and auth for simulator testing
+  if (__DEV__) {
+    return <Redirect href="/(protected)/(tabs)" />;
+  }
 
   if (isLoading || !onboardingChecked) {
     return (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import SupportTicketModal from '../../../components/ui/SupportTicketModal';
 import {
   View,
   Text,
@@ -8,7 +9,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -41,7 +42,6 @@ interface EraStats {
 }
 
 export default function SettingsScreen() {
-  const router = useRouter();
   const { user, logout, deleteAccount, isGuest, isAuthenticated } = useAuth();
   const { isSubscribed, handleRestore } = useSubscription();
   const [stats, setStats] = useState<EraStats | null>(null);
@@ -59,6 +59,7 @@ export default function SettingsScreen() {
   const [legalContent, setLegalContent] = useState('');
   const [legalTitle, setLegalTitle] = useState('');
   const [legalLoading, setLegalLoading] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
 
   const isAppleUser = user?.isAppleUser || false;
 
@@ -146,15 +147,17 @@ export default function SettingsScreen() {
       router.replace('/(auth)/login');
     } catch (error: any) {
       hapticError();
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Failed to delete account. Please try again.';
-      setDeleteError(errorMessage);
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        setDeleteError('Incorrect password. Please try again.');
+      } else if (error?.message?.includes('Network Error')) {
+        setDeleteError('No internet connection. Please check your network.');
+      } else {
+        setDeleteError('Failed to delete account. Please try again.');
+      }
     } finally {
       setDeleteLoading(false);
     }
-  }, [deletePassword, isAppleUser, deleteAccount, router]);
+  }, [deletePassword, isAppleUser, deleteAccount]);
 
   const openLegalPage = useCallback(async (type: 'privacy' | 'terms') => {
     hapticLight();
@@ -410,6 +413,19 @@ export default function SettingsScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} color="#6b7280" />
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => { hapticSelection(); setShowSupport(true); }}
+            className="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-3 flex-row items-center justify-between"
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="chatbubble-ellipses-outline" size={24} color="#ec4899" />
+              <Text className="text-white font-medium ml-3">
+                Contact Support
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+          </TouchableOpacity>
         </View>
 
         {/* Actions Section */}
@@ -453,6 +469,8 @@ export default function SettingsScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      <SupportTicketModal visible={showSupport} onClose={() => setShowSupport(false)} appId="eracheck" userEmail={user?.email} />
 
       {/* Legal Document Modal */}
       <Modal

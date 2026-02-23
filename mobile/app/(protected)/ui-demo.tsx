@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Button from '../../components/ui/Button';
@@ -30,7 +30,6 @@ const MOCK_ERA = {
 };
 
 export default function UIDemoScreen() {
-  const router = useRouter();
   const [showModal, setShowModal] = React.useState(false);
 
   return (

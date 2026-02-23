@@ -2,6 +2,7 @@ import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Redirect, Slot } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
+import { SubscriptionProvider } from '../../contexts/SubscriptionContext';
 
 export default function ProtectedLayout() {
   const { isAuthenticated, isLoading, isGuest } = useAuth();
@@ -18,5 +19,9 @@ export default function ProtectedLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  return <Slot />;
+  return (
+    <SubscriptionProvider>
+      <Slot />
+    </SubscriptionProvider>
+  );
 }
