@@ -72,6 +72,18 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Request interceptor for authApi: also attach access token for /auth/me, /auth/logout etc.
+authApi.interceptors.request.use(
+  async (config: InternalAxiosRequestConfig) => {
+    const token = await getAccessToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // Response interceptor: auto-refresh on 401
 let isRefreshing = false;
 let failedQueue: Array<{

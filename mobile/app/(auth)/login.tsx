@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, KeyboardAvoidingView, Platform, Pressable, TouchableOpacity, ActivityIndicator, ScrollView, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import AppleSignInButton from '../../components/ui/AppleSignInButton';
@@ -109,24 +108,20 @@ export default function LoginScreen() {
             />
           </View>
 
-          <Pressable
-            onPress={handleLogin}
-            disabled={isLoading}
-            style={{ opacity: isLoading ? 0.6 : 1 }}
-          >
-            <LinearGradient
-              colors={['#A855F7', '#EC4899']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="rounded-xl py-4 items-center justify-center"
+          <View className='items-center'>
+            <Pressable
+              onPress={handleLogin}
+              disabled={isLoading}
+              className='rounded-full px-8 py-4 items-center justify-center'
+              style={{ backgroundColor: '#ec4899', opacity: isLoading ? 0.6 : 1 }}
             >
               {isLoading ? (
                 <ActivityIndicator color="#ffffff" size="small" />
               ) : (
                 <Text className="text-white text-lg font-bold">Sign In</Text>
               )}
-            </LinearGradient>
-          </Pressable>
+            </Pressable>
+          </View>
 
           {/* Sign in with Apple (Guideline 4.8) */}
           <AppleSignInButton onError={(msg) => setError(msg)} />

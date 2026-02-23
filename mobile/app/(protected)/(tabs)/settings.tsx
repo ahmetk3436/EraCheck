@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -46,6 +47,7 @@ export default function SettingsScreen() {
   const { isSubscribed, handleRestore } = useSubscription();
   const [stats, setStats] = useState<EraStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   // Delete modal state
@@ -67,10 +69,15 @@ export default function SettingsScreen() {
     loadStats();
   }, []);
 
-  const loadStats = async () => {
+  const loadStats = async (isRefresh = false) => {
     if (isGuest && !isAuthenticated) {
       setLoading(false);
       return;
+    }
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
     }
     try {
       const { data } = await api.get('/era/stats');
@@ -82,8 +89,13 @@ export default function SettingsScreen() {
       hapticError();
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = useCallback(() => {
+    loadStats(true);
+  }, []);
 
   const handleLogout = async () => {
     hapticLight();
@@ -238,7 +250,18 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
-      <ScrollView className="flex-1" contentContainerClassName="p-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="p-6"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#ec4899"
+            colors={['#ec4899']}
+          />
+        }
+      >
         {/* Header */}
         <View className="mb-6">
           <Text className="text-3xl font-bold text-white mb-2">

@@ -133,24 +133,26 @@ export default function RegisterScreen() {
             />
           </View>
 
-          <Pressable
-            onPress={handleRegister}
-            disabled={isLoading}
-            style={{ opacity: isLoading ? 0.6 : 1 }}
-          >
-            <LinearGradient
-              colors={['#A855F7', '#EC4899']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="rounded-xl py-4 items-center justify-center"
+          <View className="items-center">
+            <Pressable
+              onPress={handleRegister}
+              disabled={isLoading}
+              style={{ opacity: isLoading ? 0.6 : 1 }}
             >
-              {isLoading ? (
-                <ActivityIndicator color="#ffffff" size="small" />
-              ) : (
-                <Text className="text-white text-lg font-bold">Create Account</Text>
-              )}
-            </LinearGradient>
-          </Pressable>
+              <LinearGradient
+                colors={['#A855F7', '#EC4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="rounded-xl py-4 px-12 items-center justify-center self-center"
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <Text className="text-white text-lg font-bold">Create Account</Text>
+                )}
+              </LinearGradient>
+            </Pressable>
+          </View>
 
           {/* Sign in with Apple (Guideline 4.8) */}
           <AppleSignInButton onError={(msg: string) => setError(msg)} />

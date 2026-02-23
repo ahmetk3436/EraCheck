@@ -11,7 +11,7 @@ const tabs = [
     path: '/(protected)/(tabs)/challenge',
     icon: 'flame' as const,
     iconOutline: 'flame-outline' as const,
-    label: 'Daily',
+    label: 'Challenge',
   },
   {
     path: '/(protected)/(tabs)',

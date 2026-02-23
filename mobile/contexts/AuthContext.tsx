@@ -6,7 +6,7 @@ import React, {
   useCallback,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { authApi } from '../lib/api';
+import api, { authApi, setOnAuthFailed } from '../lib/api';
 import {
   setTokens,
   clearTokens,
@@ -178,6 +178,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setGuestUsageCount(0);
     }
   }, []);
+
+  // Register logout callback for token refresh failures
+  useEffect(() => {
+    setOnAuthFailed(() => logout);
+    return () => setOnAuthFailed(null);
+  }, [logout]);
 
   // Account deletion (Guideline 5.1.1)
   const deleteAccount = useCallback(

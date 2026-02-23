@@ -367,6 +367,7 @@ export default function ChallengeScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const resultAnim = useRef(new Animated.Value(0)).current;
   const photoOverlayOpacity = useRef(new Animated.Value(1)).current;
+  const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
 
   // ============================================
   // GUEST USAGE MANAGEMENT
@@ -796,12 +797,16 @@ export default function ChallengeScreen() {
   useEffect(() => {
     const streak = streakData?.current_streak || 0;
     if (streak < 50) {
-      Animated.loop(
+      pulseAnimationRef.current = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, { toValue: 1.05, duration: 1000, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
           Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
         ])
-      ).start();
+      );
+      pulseAnimationRef.current.start();
+      return () => {
+        pulseAnimationRef.current?.stop();
+      };
     }
   }, [streakData, pulseAnim]);
 

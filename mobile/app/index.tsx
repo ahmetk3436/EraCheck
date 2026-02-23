@@ -24,11 +24,6 @@ export default function Index() {
     checkOnboarding();
   }, []);
 
-  // DEV bypass: skip onboarding and auth for simulator testing
-  if (__DEV__) {
-    return <Redirect href="/(protected)/(tabs)" />;
-  }
-
   if (isLoading || !onboardingChecked) {
     return (
       <View className="flex-1 items-center justify-center bg-gray-950">

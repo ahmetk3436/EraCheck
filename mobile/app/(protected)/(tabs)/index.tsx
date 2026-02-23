@@ -580,31 +580,29 @@ export default function QuizHomeScreen() {
           )}
 
           {/* === START QUIZ CTA BUTTON === */}
-          <Pressable onPress={handleStartQuiz} className="mb-6">
-            <LinearGradient
-              colors={['#831843', '#581c87']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="rounded-2xl py-5 px-6 border border-pink-500/30"
-              style={{
-                shadowColor: '#ec4899',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.2,
-                shadowRadius: 12,
-                elevation: 6,
-              }}
-            >
-              <View className="flex-row items-center justify-center">
-                <Ionicons name="sparkles" size={26} color="#ec4899" />
-                <Text className="text-xl font-bold text-white ml-3">
+          <View className="items-center mb-6">
+            <Pressable onPress={handleStartQuiz}>
+              <View
+                className="rounded-full px-8 py-4 flex-row items-center justify-center"
+                style={{
+                  backgroundColor: '#ec4899',
+                  shadowColor: '#ec4899',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.4,
+                  shadowRadius: 12,
+                  elevation: 8,
+                }}
+              >
+                <Ionicons name="sparkles" size={22} color="#ffffff" />
+                <Text className="text-lg font-bold text-white ml-2">
                   Discover Your Era
                 </Text>
               </View>
-              <Text className="text-sm text-center mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                15 questions  ·  2 min  ·  Free
-              </Text>
-            </LinearGradient>
-          </Pressable>
+            </Pressable>
+            <Text className="text-xs text-gray-500 mt-3">
+              15 questions  ·  2 min  ·  Free
+            </Text>
+          </View>
 
           {/* === QUICK STATS === */}
           {latestResult && (
